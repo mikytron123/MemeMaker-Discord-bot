@@ -1,0 +1,5 @@
+pillow
+requests
+python-dotenv
+fontTools
+discord.py
