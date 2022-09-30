@@ -4,6 +4,7 @@ import random
 from io import BytesIO
 from pathlib import Path
 from typing import List
+import traceback
 import discord
 import requests
 from discord import app_commands
@@ -82,6 +83,7 @@ async def spongebob(ctx: discord.Interaction, text: str):
                 file=discord.File(fp=image_binary, filename='image.png'))
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
         await ctx.followup.send("Error adding text to image")
 
 
@@ -92,6 +94,9 @@ async def spongebob(ctx: discord.Interaction, text: str):
 async def framegif(ctx: discord.Interaction, file: discord.Attachment):
     await ctx.response.defer(ephemeral=False)
     try:
+        if file.content_type is None:
+            await ctx.followup.send("Unkown file type")
+            return
         if ("gif" not in file.content_type):
             await ctx.followup.send("file must be a gif")
             return
@@ -108,6 +113,7 @@ async def framegif(ctx: discord.Interaction, file: discord.Attachment):
                                     ephemeral=False)
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
         await ctx.followup.send("Error generating random frame")
 
 
@@ -115,23 +121,28 @@ async def framegif(ctx: discord.Interaction, file: discord.Attachment):
 @app_commands.describe(file="image file")
 async def amogus(ctx: discord.Interaction, file: discord.Attachment):
     await ctx.response.defer()
-    if file.content_type is not None and file.content_type.startswith(
-            "image") == False:
-        await ctx.followup.send("file must be an image")
-        return
-    frames = dumpy(file)
-    frame_one = frames[0]
-    with BytesIO() as gif_binary:
-        frame_one.save(gif_binary,
-                       format="GIF",
-                       append_images=frames,
-                       save_all=True,
-                       duration=100,
-                       loop=0)
-        gif_binary.seek(0)
-        await ctx.followup.send(file=discord.File(
-            fp=gif_binary,
-            filename=str(Path(file.filename).with_suffix(".gif"))))
+    try:
+        if file.content_type is not None and file.content_type.startswith(
+                "image") == False:
+            await ctx.followup.send("file must be an image")
+            return
+        frames = dumpy(file)
+        frame_one = frames[0]
+        with BytesIO() as gif_binary:
+            frame_one.save(gif_binary,
+                        format="GIF",
+                        append_images=frames,
+                        save_all=True,
+                        duration=100,
+                        loop=0)
+            gif_binary.seek(0)
+            await ctx.followup.send(file=discord.File(
+                fp=gif_binary,
+                filename=str(Path(file.filename).with_suffix(".gif"))))
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error creating amogus gif")
 
 
 @client.tree.command(name="creatememe", description="Create meme from an image")
@@ -150,7 +161,14 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
 
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
         await ctx.followup.send("Error creating meme")
+
+@client.tree.command(name="info", description="Extra info about the bot")
+async def info(ctx:discord.Interaction):
+    embed=discord.Embed(title="MemeBot Info", description="This bot is managed by vision#5160")
+    embed.add_field(name="💻 Source Code:", value="[Click Here](https://github.com/mikytron123/MemeMaker-Discord-bot)", inline=False)
+    await ctx.response.send_message(embed=embed)
 
 
 client.run(TOKEN)
