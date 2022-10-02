@@ -26,7 +26,6 @@ def has_glyph(font, glyph):
     return False
 
 
-
 class MyClient(discord.Client):
 
     def __init__(self):
@@ -60,7 +59,9 @@ async def spongebob(ctx: discord.Interaction, text: str):
         draw = ImageDraw.Draw(img)
         startlen = 590
         FONT_SIZE = 55
+        # loop through and add each character to image
         for char in addstr:
+            #check for character in fonts
             checkfont = TTFont('uni.ttf')
             checkfont2 = TTFont('color.ttf')
             if has_glyph(checkfont, char):
@@ -74,8 +75,10 @@ async def spongebob(ctx: discord.Interaction, text: str):
                                           FONT_SIZE,
                                           encoding='unic')
             size = font.getlength(char)
+            # add text to image
             draw.text((startlen, 20), char, font=font, embedded_color=True)
             startlen += int(size)
+        # send final image
         with BytesIO() as image_binary:
             img.save(image_binary, 'PNG')
             image_binary.seek(0)
@@ -100,17 +103,19 @@ async def framegif(ctx: discord.Interaction, file: discord.Attachment):
         if ("gif" not in file.content_type):
             await ctx.followup.send("file must be a gif")
             return
+        #read image from url
         response = requests.get(file.url)
         gif = Image.open(BytesIO(response.content))
         num_frames = gif.n_frames
+        #select random frame
         rand_frame = random.randint(0, num_frames)
         gif.seek(rand_frame)
+        #send final image
         with BytesIO() as image_binary:
             gif.save(image_binary, 'PNG')
             image_binary.seek(0)
             await ctx.followup.send(file=discord.File(fp=image_binary,
-                                                      filename='image.png'),
-                                    ephemeral=False)
+                                                      filename=str(Path(file.filename).with_suffix(".png"))))
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -130,11 +135,11 @@ async def amogus(ctx: discord.Interaction, file: discord.Attachment):
         frame_one = frames[0]
         with BytesIO() as gif_binary:
             frame_one.save(gif_binary,
-                        format="GIF",
-                        append_images=frames,
-                        save_all=True,
-                        duration=100,
-                        loop=0)
+                           format="GIF",
+                           append_images=frames,
+                           save_all=True,
+                           duration=100,
+                           loop=0)
             gif_binary.seek(0)
             await ctx.followup.send(file=discord.File(
                 fp=gif_binary,
@@ -164,11 +169,46 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
         print(traceback.format_exc())
         await ctx.followup.send("Error creating meme")
 
+
 @client.tree.command(name="info", description="Extra info about the bot")
-async def info(ctx:discord.Interaction):
-    embed=discord.Embed(title="MemeBot Info", description="This bot is managed by vision#5160")
-    embed.add_field(name="💻 Source Code:", value="[Click Here](https://github.com/mikytron123/MemeMaker-Discord-bot)", inline=False)
+async def info(ctx: discord.Interaction):
+    embed = discord.Embed(title="MemeBot Info",
+                          description="This bot is managed by vision#5160")
+    embed.add_field(name="💻 Source Code:",
+                    value="[Click Here](https://github.com/mikytron123/MemeMaker-Discord-bot)", inline=False)
     await ctx.response.send_message(embed=embed)
+
+@client.tree.command(name="speechbubble", description="Add speechbubble to image")
+@app_commands.describe(file="image file")
+async def speechbubble(ctx: discord.Interaction, file: discord.Attachment):
+    await ctx.response.defer()
+    try:
+        if file.content_type is None:
+            await ctx.followup.send("Unkown file type")
+            return
+        if ("image" not in file.content_type):
+            await ctx.followup.send("file must be a image")
+            return
+        bubble = Image.open("images/speechbubble.png")
+        response = requests.get(file.url)
+        img = Image.open(BytesIO(response.content))
+        bubble = bubble.resize((img.size[0],round(img.size[1]/4)))
+        finalwidth = img.size[0]
+        finalheight = img.size[1] + bubble.size[1]
+        newimg = Image.new("RGB",(finalwidth,finalheight))
+        newimg.paste(bubble,(0,0))
+        newimg.paste(img,(0,bubble.size[1]))
+        with BytesIO() as image_binary:
+            newimg.save(image_binary, 'PNG')
+            image_binary.seek(0)
+            await ctx.followup.send(file=discord.File(fp=image_binary,
+                                                      filename=str(Path(file.filename).with_suffix(".png"))))
+
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error adding speechbubble to image")
+
 
 
 client.run(TOKEN)
