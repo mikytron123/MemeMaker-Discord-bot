@@ -4,3 +4,4 @@ python-dotenv
 fontTools
 discord.py
 numpy
+apnggif

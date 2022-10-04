@@ -1,10 +1,12 @@
 # bot.py
 import os
 import random
+import traceback
 from io import BytesIO
 from pathlib import Path
 from typing import List
-import traceback
+
+from apnggif import apnggif
 import discord
 import requests
 from discord import app_commands
@@ -46,6 +48,48 @@ async def on_ready():
     print(f'Logged in as {client.user} (ID: {client.user.id})')
     print('------')
 
+@client.tree.context_menu(name='StickerInfo')
+async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
+    try:
+        if len(message.stickers) == 0:
+            await ctx.response.send_message("No sticker in this message",ephemeral=True)
+            return
+        sticker = message.stickers[0]
+        embed=discord.Embed(title=sticker.name,url=sticker.url)
+        embed.add_field(name="id", value=sticker.id, inline=False)
+        embed.set_image(url=sticker.url)
+        await ctx.response.send_message(embed=embed)
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.response.send_message("Error finding sticker",ephemeral=True)
+
+@client.tree.command(name="apng2gif",description="Convert apng file to gif")
+@app_commands.describe(file="apng file")
+async def apng2gif(ctx:discord.Interaction,file:discord.Attachment):
+    await ctx.response.defer()
+    try:
+        if file.content_type is None:
+            await ctx.followup.send("Unknown file type",ephemeral=True)
+            return
+        if file.content_type.endswith("png")==False:
+            await ctx.followup.send("File must be apng",ephemeral=True)
+            return
+        response = requests.get(file.url)
+        with open(file.filename,"wb") as f:
+            f.write(response.content)
+
+        apnggif(file.filename)
+        await ctx.followup.send(file=discord.File(str(Path(file.filename).with_suffix(".gif"))))
+        filepath = Path(file.filename)
+        filepath.unlink()
+        filepath = Path(file.filename).with_suffix(".gif")
+        filepath.unlink()
+
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error converting to gif",ephemeral=True)
 
 @client.tree.command(name="spongebob",
                      description="Adds text to spongebob image")
@@ -87,7 +131,7 @@ async def spongebob(ctx: discord.Interaction, text: str):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error adding text to image")
+        await ctx.followup.send("Error adding text to image",ephemeral=True)
 
 
 @client.tree.command(name="framegif",
@@ -119,7 +163,7 @@ async def framegif(ctx: discord.Interaction, file: discord.Attachment):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error generating random frame")
+        await ctx.followup.send("Error generating random frame",ephemeral=True)
 
 
 @client.tree.command(name="amogus", description="Creates amogus image")
@@ -129,7 +173,7 @@ async def amogus(ctx: discord.Interaction, file: discord.Attachment):
     try:
         if file.content_type is not None and file.content_type.startswith(
                 "image") == False:
-            await ctx.followup.send("file must be an image")
+            await ctx.followup.send("file must be an image",ephemeral=True)
             return
         frames = dumpy(file)
         frame_one = frames[0]
@@ -147,7 +191,7 @@ async def amogus(ctx: discord.Interaction, file: discord.Attachment):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error creating amogus gif")
+        await ctx.followup.send("Error creating amogus gif",ephemeral=True)
 
 
 @client.tree.command(name="creatememe", description="Create meme from an image")
@@ -157,7 +201,7 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
     try:
         if file.content_type is not None and file.content_type.startswith(
                 "image") == False:
-            await ctx.followup.send("file must be an image")
+            await ctx.followup.send("file must be an image",ephemeral=True)
             return
         baseurl = "https://api.memegen.link/images/custom"
         payload = {"background": file.url, "text": text.split(",")}
@@ -167,7 +211,7 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error creating meme")
+        await ctx.followup.send("Error creating meme",ephemeral=True)
 
 
 @client.tree.command(name="info", description="Extra info about the bot")
@@ -184,10 +228,10 @@ async def speechbubble(ctx: discord.Interaction, file: discord.Attachment):
     await ctx.response.defer()
     try:
         if file.content_type is None:
-            await ctx.followup.send("Unkown file type")
+            await ctx.followup.send("Unkown file type",ephemeral=True)
             return
         if ("image" not in file.content_type):
-            await ctx.followup.send("file must be a image")
+            await ctx.followup.send("file must be a image",ephemeral=True)
             return
         bubble = Image.open("images/speechbubble.png")
         response = requests.get(file.url)
@@ -207,7 +251,7 @@ async def speechbubble(ctx: discord.Interaction, file: discord.Attachment):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error adding speechbubble to image")
+        await ctx.followup.send("Error adding speechbubble to image",ephemeral=True)
 
 
 
