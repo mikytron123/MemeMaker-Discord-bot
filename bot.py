@@ -14,12 +14,13 @@ from dotenv import load_dotenv
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageDraw, ImageFont
 
-from dumpy import dumpy
 from config import read_configs
+from dumpy import dumpy
 
-configs = read_configs(dev=True)
-TOKEN:str = configs["Token"]
-MY_GUILDS:List[discord.Object]=configs["guilds"]
+configs = read_configs(dev=False)
+TOKEN: str = configs["Token"]
+MY_GUILDS: List[discord.Object] = configs["guilds"]
+
 
 def has_glyph(font, glyph):
     for table in font['cmap'].tables:
@@ -72,7 +73,7 @@ async def apng2gif(ctx:discord.Interaction,file:discord.Attachment):
         if file.content_type is None:
             await ctx.followup.send("Unknown file type",ephemeral=True)
             return
-        if file.content_type.endswith("png")==False:
+        if not file.content_type.endswith("png"):
             await ctx.followup.send("File must be apng",ephemeral=True)
             return
         response = requests.get(file.url)
@@ -213,6 +214,81 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
         print(traceback.format_exc())
         await ctx.followup.send("Error creating meme",ephemeral=True)
 
+class Scroller(discord.ui.View):
+    def __init__(self,responselst) -> None:
+        super().__init__(timeout=20)
+        self.count = 0
+        self.responselst = responselst
+
+    async def createembed(self)->discord.Embed:
+        description = f"Use this template by providing the id in /creatememetemplate"
+        embed = discord.Embed(title=self.responselst[self.count]["name"],description=description)
+        embed.add_field(name="id",value=self.responselst[self.count]["id"])
+        embed.set_image(url=self.responselst[self.count]["blank"])
+        return embed
+
+    @discord.ui.button(style=discord.ButtonStyle.gray,emoji="⬅️")
+    async def left(self,interaction: discord.Interaction, button: discord.ui.Button):
+        self.count = max(0,self.count-1)
+        embed = await self.createembed()
+        await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(style=discord.ButtonStyle.gray,emoji="➡️")
+    async def right(self,interaction: discord.Interaction, button: discord.ui.Button):
+        self.count = min(len(self.responselst)-1,self.count+1)
+        embed= await self.createembed()
+        await interaction.response.edit_message(embed=embed)
+
+
+@client.tree.command(name="memetemplates", description="List image templates")
+@app_commands.describe(filter="filter meme templates")
+async def memetemplates(ctx: discord.Interaction, filter: str=""):
+    await ctx.response.defer()
+    try:
+        baseurl = "https://api.memegen.link/templates"
+        if filter!="":
+            response = requests.get(baseurl, params={"filter":filter}).json()
+        else:
+            response = requests.get(baseurl).json()
+        
+        if len(response)==0:
+            await ctx.followup.send("No templates found",ephemeral=True)
+            return
+        count = 0
+        description = f"Use this template by providing the id in /creatememetemplate"
+        embed = discord.Embed(title=response[count]["name"],description=description)
+        embed.add_field(name="id",value=response[count]["id"])
+        embed.set_image(url=response[count]["blank"])
+        view = Scroller(response)
+        msg = await ctx.followup.send(embed = embed, view=view)
+        timeout = await view.wait()
+        if timeout:
+            if isinstance(msg,discord.WebhookMessage):
+                await msg.edit(view=None)
+            elif isinstance(msg,discord.Interaction):
+                await msg.edit_original_message(view=None)
+        
+
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error creating meme",ephemeral=True)
+
+
+@client.tree.command(name="creatememetemplate", description="Creates a meme from a template id")
+@app_commands.describe(id = "id of template",text="top and bottom text seperated by ,")
+async def creatememetemplate(ctx: discord.Interaction, id: str, text:str):
+    await ctx.response.defer()
+    try:
+        baseurl = f"https://api.memegen.link/templates/{id.strip()}"
+        payload = {"text": text.split(",")}
+        response = requests.post(baseurl, data=payload).json()
+        await ctx.followup.send(response["url"])
+
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error creating meme",ephemeral=True)
 
 @client.tree.command(name="info", description="Extra info about the bot")
 async def info(ctx: discord.Interaction):
