@@ -1,19 +1,20 @@
 # bot.py
+import aiohttp
+import discord
+import io
 import os
 import random
-import traceback
-from io import BytesIO
-from pathlib import Path
-from typing import List
-
-from apnggif import apnggif
-import discord
 import requests
+import traceback
+from PIL import Image, ImageDraw, ImageFont
+from apnggif import apnggif
+from bs4 import BeautifulSoup
 from discord import app_commands
-import aiohttp
 from dotenv import load_dotenv
 from fontTools.ttLib import TTFont
-from PIL import Image, ImageDraw, ImageFont
+from io import BytesIO
+from pathlib import Path
+from typing import List, Dict, Callable,Optional
 
 from config import read_configs
 from dumpy import dumpy
@@ -58,6 +59,7 @@ async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
             await ctx.response.send_message("No sticker in this message", ephemeral=True)
             return
         sticker = message.stickers[0]
+
         embed = discord.Embed(title=sticker.name, url=sticker.url)
         embed.add_field(name="id", value=sticker.id, inline=False)
         embed.set_image(url=sticker.url)
@@ -227,29 +229,29 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
 
 
 class Scroller(discord.ui.View):
-    def __init__(self, responselst) -> None:
+    def __init__(self, responselst,embedfunc: Optional[Callable[[int],discord.Embed]] = None) -> None:
         super().__init__(timeout=20)
         self.count = 0
         self.responselst = responselst
-
-    async def createembed(self) -> discord.Embed:
-        description = f"Use this template by providing the id in /creatememetemplate"
-        embed = discord.Embed(title=self.responselst[self.count]["name"], description=description)
-        embed.add_field(name="id", value=self.responselst[self.count]["id"])
-        embed.set_image(url=self.responselst[self.count]["blank"])
-        return embed
+        self.embedfunc = embedfunc
 
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji="⬅️")
     async def left(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.count = max(0, self.count - 1)
-        embed = await self.createembed()
-        await interaction.response.edit_message(embed=embed)
+        if self.embedfunc is not None:
+            embed = self.embedfunc(self.responselst, self.count)
+            await interaction.response.edit_message(embed=embed)
+            return
+        await interaction.response.edit_message(content=self.responselst[self.count])
 
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji="➡️")
     async def right(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.count = min(len(self.responselst) - 1, self.count + 1)
-        embed = await self.createembed()
-        await interaction.response.edit_message(embed=embed)
+        if self.embedfunc is not None:
+            embed = self.embedfunc(self.responselst, self.count)
+            await interaction.response.edit_message(embed=embed)
+            return
+        await interaction.response.edit_message(content=self.responselst[self.count])
 
 
 @client.tree.command(name="memetemplates", description="List image templates")
@@ -266,20 +268,23 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
         if len(response) == 0:
             await ctx.followup.send("No templates found", ephemeral=True)
             return
-        count = 0
-        description = f"Use this template by providing the id in /creatememetemplate"
-        embed = discord.Embed(title=response[count]["name"], description=description)
-        embed.add_field(name="id", value=response[count]["id"])
-        embed.set_image(url=response[count]["blank"])
-        view = Scroller(response)
+
+        def embedfunc(response,count: int) -> discord.Embed:
+            description = f"Use this template by providing the id in /creatememetemplate"
+            embed = discord.Embed(title=response[count]["name"], description=description)
+            embed.add_field(name="id", value=response[count]["id"])
+            embed.set_image(url=response[count]["blank"])
+            return embed
+
+        embed = embedfunc(response, 0)
+        view = Scroller(response, embedfunc=embedfunc)
         msg = await ctx.followup.send(embed=embed, view=view)
         timeout = await view.wait()
         if timeout:
             if isinstance(msg, discord.WebhookMessage):
                 await msg.edit(view=None)
             elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_message(view=None)
-
+                await msg.edit_original_response(view=None)
 
     except Exception as e:
         print(e)
@@ -302,6 +307,37 @@ async def creatememetemplate(ctx: discord.Interaction, id: str, text: str):
         print(traceback.format_exc())
         await ctx.followup.send("Error creating meme", ephemeral=True)
 
+
+@client.tree.command(name="knowyourmeme", description="Searches know your meme for submission")
+@app_commands.describe(search="name of meme")
+async def kym(ctx: discord.Interaction,search: str):
+    await ctx.response.defer()
+    try:
+        url = f'https://knowyourmeme.com/search?q={search.replace(" ","+")}'
+        header = {"User-Agent":
+                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"}
+        resp = requests.get(url, headers=header)
+        soup = BeautifulSoup(resp.content, "html.parser")
+        alllinks: List[str] = []
+        for link in soup.find_all("a"):
+            if "/memes/" in link["href"] and link.has_attr("class") and link["class"] == ["photo"]:
+                alllinks.append(f"https://knowyourmeme.com{link['href']}")
+        if len(alllinks)==0:
+            await ctx.followup.send("No results found",ephemeral=True)
+            return
+        view = Scroller(alllinks)
+        msg = await ctx.followup.send(content=alllinks[0], view=view)
+        timeout = await view.wait()
+        if timeout:
+            if isinstance(msg, discord.WebhookMessage):
+                await msg.edit(view=None)
+            elif isinstance(msg, discord.Interaction):
+                await msg.edit_original_response(view=None)
+
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error searching kym", ephemeral=True)
 
 @client.tree.command(name="info", description="Extra info about the bot")
 async def info(ctx: discord.Interaction):
