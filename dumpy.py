@@ -1,6 +1,6 @@
-
 import colorsys
 import io
+from typing import Tuple
 
 import numpy as np
 import PIL
@@ -8,14 +8,15 @@ import requests
 from PIL import Image
 import discord
 
-def dumpy(file:discord.Attachment):
-    background:str = "dumpy/black.png"
 
-    ty = 20 # // width value
+def dumpy(file: str):
+    background: str = "dumpy/black.png"
+
+    ty = 20  # // width value
     backgroundimg = Image.open(background).convert("RGB")
-    
-    resp = requests.get(file.url)
-    inputimg = Image.open(io.BytesIO(resp.content)) 
+
+    resp = requests.get(file)
+    inputimg = Image.open(io.BytesIO(resp.content))
 
     # Calculates size from height
     txd = inputimg.width / inputimg.height
@@ -45,34 +46,33 @@ def dumpy(file:discord.Attachment):
     mox = 74
     moy = 63
     moguses = []
-    for it in range(0,bufferedImageArraySize):
+    for it in range(0, bufferedImageArraySize):
         temp = f"dumpy/{it}{modestring}.png"
         moguses.append(Image.open(temp).convert("RGB"))
 
-
-    if (ix > 1000 or iy > 1000):
-        if (ix > iy):
+    if ix > 1000 or iy > 1000:
+        if ix > iy:
             fac = 1000.0 / ix
         else:
             fac = 1000.0 / iy
-        
+
         mox = int(round(mox * fac))
         moy = int(round(moy * fac))
-        for itt in range(0,bufferedImageArraySize):
+        for itt in range(0, bufferedImageArraySize):
             moguses[itt] = (moguses[itt].resize((mox, moy)))
 
         pad = (int(pad * fac))
         ix = (mox * tx) + (pad * 2)
         iy = (moy * ty) + (pad * 2)
 
-    for index in range(0,bufferedImageArraySize):
+    for index in range(0, bufferedImageArraySize):
         indexx = index
         F_bg = backgroundimg
         F_ty = ty
         F_tx = tx
         F_count1Check = count1Check
         F_count2Reset = count2Reset
-        ixF = ix #// new series of "modified" variables
+        ixF = ix  # // new series of "modified" variables
         iyF = iy
         moxF = mox
         moyF = moy
@@ -84,40 +84,32 @@ def dumpy(file:discord.Attachment):
         count2 = indexx
 
         # iterates through pixels
-        for y in range(0,F_ty):
-            for x in range(0,F_tx):
+        for y in range(0, F_ty):
+            for x in range(0, F_tx):
 
                 # Grabs appropriate pixel frame
-                pixel = moguses[count] # No more constant reading!
+                pixel = moguses[count]  # No more constant reading!
                 pixelinputimg = inputimage.load()
                 pixel = shader(pixel, pixelinputimg[x, y])
                 # overlays it (if not null)
-                if (pixel is not None):
+                if pixel is not None:
                     frames[indexx] = overlayImages(frames[indexx], pixel, (x * moxF) + padF,
-                            (y * moyF) + padF)
-                
+                                                   (y * moyF) + padF)
 
                 # Handles animating
-                count+=1
-                if (count == F_count1Check):
+                count += 1
+                if count == F_count1Check:
                     count = 0
-                
 
             # Handles line resets
-            count2-=1
-            if (count2 == -1):
+            count2 -= 1
+            if count2 == -1:
                 count2 = F_count2Reset
             count = count2
-        # Writes finished frames
-        #ImageIO.write(frames[indexx], "PNG", new File(F_dotSlash + "F_" + indexx + F_extraoutput + ".png"))
-        
-        #print(indexx)
-    #frame_one = frames[0]
-    #frame_one.save("my_awesome.gif",format="GIF",append_images=frames,save_all=True,duration=100,loop=0)
-    return frames    
+    return frames
 
 
-def shader(t, pRgb):
+def shader(t, pRgb:Tuple[int,int,int]):
     c = (197, 17, 17)
     c2 = (122, 8, 56)
     entry = pRgb
@@ -130,17 +122,17 @@ def shader(t, pRgb):
         entry = (colorsys.hsv_to_rgb(hsb[0], hsb[1], blackLevel))
     # "Blue's Clues" shadow fix: Fixes navy blue shadows.
     shadeDefault = 0.66
-    factor = abs(shadeDefault -  hsb[0])
+    factor = abs(shadeDefault - hsb[0])
     factor = (1.0 / 6.0) - factor
     if (factor > 0):
         factor *= 2
         shadeDefault = shadeDefault - factor
-    shade = [0,0,0]
+    shade = [0, 0, 0]
     try:
-        shade = [int(entry[0] * shadeDefault),int(entry[1] * shadeDefault), int(entry[2] * shadeDefault)]
+        shade = [int(entry[0] * shadeDefault), int(entry[1] * shadeDefault), int(entry[2] * shadeDefault)]
     except Exception as iae:
         print("ERROR: " + str(shadeDefault) + ", " + str(factor))
-    
+
     hsb = list(colorsys.rgb_to_hsv(shade[0], shade[1], shade[2]))
     hsb[0] = hsb[0] - 0.0635
     if (hsb[0] < 0.0):
@@ -149,19 +141,17 @@ def shader(t, pRgb):
     # fills in img
 
     tmatrix = np.array(t)
-    tmatrix[(tmatrix[:,:,0] == c[0]) & (tmatrix[:,:,1] == c[1]) & (tmatrix[:,:,2] == c[2])] = entry 
-    tmatrix[(tmatrix[:,:,0] == c2[0]) & (tmatrix[:,:,1] == c2[1]) & (tmatrix[:,:,2] == c2[2])] = shade 
+    tmatrix[(tmatrix[:, :, 0] == c[0]) & (tmatrix[:, :, 1] == c[1]) & (tmatrix[:, :, 2] == c[2])] = entry
+    tmatrix[(tmatrix[:, :, 0] == c2[0]) & (tmatrix[:, :, 1] == c2[1]) & (tmatrix[:, :, 2] == c2[2])] = shade
     convertedImage = Image.fromarray(tmatrix)
     return convertedImage
 
-def overlayImages(bgImage, fgImage, locateX:int, locateY:int):
 
+def overlayImages(bgImage, fgImage, locateX: int, locateY: int):
     if (fgImage.height > bgImage.height or fgImage.width > fgImage.width):
         print("Foreground Image Is Bigger In One or Both Dimensions"
-                + "nCannot proceed with overlay." + "nn Please use smaller Image for foreground")
+              + "nCannot proceed with overlay." + "nn Please use smaller Image for foreground")
         return None
     bgImage.paste(fgImage, (locateX, locateY))
-    
+
     return bgImage
-
-

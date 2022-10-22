@@ -15,6 +15,7 @@ from fontTools.ttLib import TTFont
 from io import BytesIO
 from pathlib import Path
 from typing import List, Dict, Callable,Optional
+from urllib.parse import urlparse
 
 from config import read_configs
 from dumpy import dumpy
@@ -141,22 +142,41 @@ async def spongebob(ctx: discord.Interaction, text: str):
         await ctx.followup.send("Error adding text to image", ephemeral=True)
 
 
-@client.tree.command(name="framegif",
+@client.tree.command(name="giframe",
                      description="Returns random frame from gif")
 @app_commands.describe(
-    file="gif file", )
-async def framegif(ctx: discord.Interaction, file: discord.Attachment):
+    file="gif file", link="direct url link to gif")
+async def giframe(ctx: discord.Interaction, file: discord.Attachment = None, link: str = ""):
     await ctx.response.defer(ephemeral=False)
     try:
-        if file.content_type is None:
-            await ctx.followup.send("Unkown file type")
+        if (file is None and link == "") or (file is not None and link != ""):
+            await ctx.followup.send("Must specify exactly one of file or link argument", ephemeral=True)
             return
-        if ("gif" not in file.content_type):
-            await ctx.followup.send("file must be a gif")
-            return
+        if file is not None:
+            if file.content_type is None:
+                await ctx.followup.send("Unkown file type")
+                return
+            if "gif" not in file.content_type:
+                await ctx.followup.send("file must be a gif")
+                return
+            url = file.url
+            response = requests.get(url)
+            imgbytes = response.content
+            filename = str(Path(file.filename).with_suffix(".png"))
+        elif link != "":
+            response = requests.get(link)
+            content_type = response.headers['Content-Type']
+            if "gif" not in content_type:
+                await ctx.followup.send("link must redirect to a gif", ephemeral = True)
+                return
+            imgbytes = response.content
+            filename = str(Path(urlparse(link).path.split("/")[-1]).with_suffix(".png"))
+        else:
+            filename = ""
+            imgbytes = None
+
         # read image from url
-        response = requests.get(file.url)
-        gif = Image.open(BytesIO(response.content))
+        gif = Image.open(BytesIO(imgbytes))
         num_frames = gif.n_frames
         # select random frame
         rand_frame = random.randint(0, num_frames)
@@ -166,7 +186,7 @@ async def framegif(ctx: discord.Interaction, file: discord.Attachment):
             gif.save(image_binary, 'PNG')
             image_binary.seek(0)
             await ctx.followup.send(file=discord.File(fp=image_binary,
-                                                      filename=str(Path(file.filename).with_suffix(".png"))))
+                                                      filename=filename))
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -182,7 +202,7 @@ async def amogus(ctx: discord.Interaction, file: discord.Attachment):
                 "image") == False:
             await ctx.followup.send("file must be an image", ephemeral=True)
             return
-        frames = dumpy(file)
+        frames = dumpy(file.url)
         frame_one = frames[0]
         with BytesIO() as gif_binary:
             frame_one.save(gif_binary,
