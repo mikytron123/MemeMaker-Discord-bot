@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from fontTools.ttLib import TTFont
 from io import BytesIO
 from pathlib import Path
-from typing import List, Dict, Callable,Optional
+from typing import List, Dict, Callable,Optional,Any
 from urllib.parse import urlparse
 
 from config import read_configs
@@ -147,17 +147,17 @@ async def spongebob(ctx: discord.Interaction, text: str):
 @app_commands.describe(
     file="gif file", link="direct url link to gif")
 async def giframe(ctx: discord.Interaction, file: discord.Attachment = None, link: str = ""):
-    await ctx.response.defer(ephemeral=False)
+    await ctx.response.defer()
     try:
         if (file is None and link == "") or (file is not None and link != ""):
             await ctx.followup.send("Must specify exactly one of file or link argument", ephemeral=True)
             return
         if file is not None:
             if file.content_type is None:
-                await ctx.followup.send("Unkown file type")
+                await ctx.followup.send("Unkown file type",ephemeral=True)
                 return
             if "gif" not in file.content_type:
-                await ctx.followup.send("file must be a gif")
+                await ctx.followup.send("file must be a gif",ephemeral=True)
                 return
             url = file.url
             response = requests.get(url)
@@ -179,7 +179,7 @@ async def giframe(ctx: discord.Interaction, file: discord.Attachment = None, lin
         gif = Image.open(BytesIO(imgbytes))
         num_frames = gif.n_frames
         # select random frame
-        rand_frame = random.randint(0, num_frames)
+        rand_frame = random.randint(0, num_frames-1)
         gif.seek(rand_frame)
         # send final image
         with BytesIO() as image_binary:
@@ -249,7 +249,7 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
 
 
 class Scroller(discord.ui.View):
-    def __init__(self, responselst,embedfunc: Optional[Callable[[int],discord.Embed]] = None) -> None:
+    def __init__(self, responselst,embedfunc: Optional[Callable[[Any,int],discord.Embed]] = None) -> None:
         super().__init__(timeout=20)
         self.count = 0
         self.responselst = responselst
