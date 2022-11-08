@@ -70,6 +70,16 @@ async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
         print(traceback.format_exc())
         await ctx.response.send_message("Error finding sticker", ephemeral=True)
 
+@client.tree.command(name="banner", description="Get user banner")
+@app_commands.describe(user="server member")
+async def banner(ctx:discord.Interaction,user:discord.Member):
+    banner = (await ctx.client.fetch_user(user.id)).banner
+    if banner is None:
+        await ctx.response.send_message(f"User {str(user)} does not have a banner",ephemeral=True)
+    else:
+        await ctx.response.send_message(banner.url)
+
+
 
 @client.tree.command(name="apng2gif", description="Convert apng file to gif")
 @app_commands.describe(file="apng file")
@@ -146,7 +156,7 @@ async def spongebob(ctx: discord.Interaction, text: str):
                      description="Returns random frame from gif")
 @app_commands.describe(
     file="gif file", link="direct url link to gif")
-async def giframe(ctx: discord.Interaction, file: discord.Attachment = None, link: str = ""):
+async def giframe(ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""):
     await ctx.response.defer()
     try:
         if (file is None and link == "") or (file is not None and link != ""):
