@@ -46,46 +46,42 @@ def dumpy(file: str):
     mox = 74
     moy = 63
     moguses = []
-    for it in range(0, bufferedImageArraySize):
+    for it in range(bufferedImageArraySize):
         temp = f"dumpy/{it}{modestring}.png"
         moguses.append(Image.open(temp).convert("RGB"))
 
     if ix > 1000 or iy > 1000:
-        if ix > iy:
-            fac = 1000.0 / ix
-        else:
-            fac = 1000.0 / iy
-
+        fac = 1000.0 / ix if ix > iy else 1000.0 / iy
         mox = int(round(mox * fac))
         moy = int(round(moy * fac))
-        for itt in range(0, bufferedImageArraySize):
+        for itt in range(bufferedImageArraySize):
             moguses[itt] = (moguses[itt].resize((mox, moy)))
 
         pad = (int(pad * fac))
         ix = (mox * tx) + (pad * 2)
         iy = (moy * ty) + (pad * 2)
 
-    for index in range(0, bufferedImageArraySize):
+    F_ty = ty
+    F_tx = tx
+    F_count1Check = count1Check
+    F_count2Reset = count2Reset
+    moxF = mox
+    moyF = moy
+    padF = pad
+
+    for index in range(bufferedImageArraySize):
         indexx = index
         F_bg = backgroundimg
-        F_ty = ty
-        F_tx = tx
-        F_count1Check = count1Check
-        F_count2Reset = count2Reset
         ixF = ix  # // new series of "modified" variables
         iyF = iy
-        moxF = mox
-        moyF = moy
-        padF = pad
-
         frames.append(F_bg.resize((ixF, iyF)))
 
         count = indexx
         count2 = indexx
 
         # iterates through pixels
-        for y in range(0, F_ty):
-            for x in range(0, F_tx):
+        for y in range(F_ty):
+            for x in range(F_tx):
 
                 # Grabs appropriate pixel frame
                 pixel = moguses[count]  # No more constant reading!
@@ -126,12 +122,12 @@ def shader(t, pRgb:Tuple[int,int,int]):
     factor = (1.0 / 6.0) - factor
     if (factor > 0):
         factor *= 2
-        shadeDefault = shadeDefault - factor
+        shadeDefault -= factor
     shade = [0, 0, 0]
     try:
         shade = [int(entry[0] * shadeDefault), int(entry[1] * shadeDefault), int(entry[2] * shadeDefault)]
     except Exception as iae:
-        print("ERROR: " + str(shadeDefault) + ", " + str(factor))
+        print(f"ERROR: {str(shadeDefault)}, {str(factor)}")
 
     hsb = list(colorsys.rgb_to_hsv(shade[0], shade[1], shade[2]))
     hsb[0] = hsb[0] - 0.0635
@@ -143,8 +139,7 @@ def shader(t, pRgb:Tuple[int,int,int]):
     tmatrix = np.array(t)
     tmatrix[(tmatrix[:, :, 0] == c[0]) & (tmatrix[:, :, 1] == c[1]) & (tmatrix[:, :, 2] == c[2])] = entry
     tmatrix[(tmatrix[:, :, 0] == c2[0]) & (tmatrix[:, :, 1] == c2[1]) & (tmatrix[:, :, 2] == c2[2])] = shade
-    convertedImage = Image.fromarray(tmatrix)
-    return convertedImage
+    return Image.fromarray(tmatrix)
 
 
 def overlayImages(bgImage, fgImage, locateX: int, locateY: int):

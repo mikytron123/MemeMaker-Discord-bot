@@ -26,10 +26,7 @@ MY_GUILDS: List[discord.Object] = configs["guilds"]
 
 
 def has_glyph(font, glyph):
-    for table in font['cmap'].tables:
-        if ord(glyph) in table.cmap.keys():
-            return True
-    return False
+    return any(ord(glyph) in table.cmap.keys() for table in font['cmap'].tables)
 
 
 class MyClient(discord.Client):
@@ -116,7 +113,7 @@ async def apng2gif(ctx: discord.Interaction, file: discord.Attachment):
 async def spongebob(ctx: discord.Interaction, text: str):
     await ctx.response.defer()
     try:
-        addstr = str(text)
+        addstr = text
         img = Image.open("spongebob.jpg")
         draw = ImageDraw.Draw(img)
         startlen = 590
@@ -159,7 +156,7 @@ async def spongebob(ctx: discord.Interaction, text: str):
 async def giframe(ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""):
     await ctx.response.defer()
     try:
-        if (file is None and link == "") or (file is not None and link != ""):
+        if file is None and not link or (file is not None and link != ""):
             await ctx.followup.send("Must specify exactly one of file or link argument", ephemeral=True)
             return
         if file is not None:
@@ -173,7 +170,7 @@ async def giframe(ctx: discord.Interaction, file: Optional[discord.Attachment] =
             response = requests.get(url)
             imgbytes = response.content
             filename = str(Path(file.filename).with_suffix(".png"))
-        elif link != "":
+        else:
             response = requests.get(link)
             content_type = response.headers['Content-Type']
             if "gif" not in content_type:
@@ -181,10 +178,6 @@ async def giframe(ctx: discord.Interaction, file: Optional[discord.Attachment] =
                 return
             imgbytes = response.content
             filename = str(Path(urlparse(link).path.split("/")[-1]).with_suffix(".png"))
-        else:
-            filename = ""
-            imgbytes = None
-
         # read image from url
         gif = Image.open(BytesIO(imgbytes))
         num_frames = gif.n_frames
@@ -300,7 +293,7 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
             return
 
         def embedfunc(response,count: int) -> discord.Embed:
-            description = f"Use this template by providing the id in /creatememetemplate"
+            description = "Use this template by providing the id in /creatememetemplate"
             embed = discord.Embed(title=response[count]["name"], description=description)
             embed.add_field(name="id", value=response[count]["id"])
             embed.set_image(url=response[count]["blank"])
@@ -348,11 +341,14 @@ async def kym(ctx: discord.Interaction,search: str):
                       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"}
         resp = requests.get(url, headers=header)
         soup = BeautifulSoup(resp.content, "html.parser")
-        alllinks: List[str] = []
-        for link in soup.find_all("a"):
-            if "/memes/" in link["href"] and link.has_attr("class") and link["class"] == ["photo"]:
-                alllinks.append(f"https://knowyourmeme.com{link['href']}")
-        if len(alllinks)==0:
+        alllinks: List[str] = [
+            f"https://knowyourmeme.com{link['href']}"
+            for link in soup.find_all("a")
+            if "/memes/" in link["href"]
+            and link.has_attr("class")
+            and link["class"] == ["photo"]
+        ]
+        if not alllinks:
             await ctx.followup.send("No results found",ephemeral=True)
             return
         view = Scroller(alllinks)
