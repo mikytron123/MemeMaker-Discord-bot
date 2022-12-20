@@ -7,3 +7,5 @@ discord.py
 numpy
 apnggif
 beautifulsoup4
+plotly
+kaleido

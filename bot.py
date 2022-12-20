@@ -4,6 +4,7 @@ import discord
 import io
 import os
 import random
+import uuid
 import requests
 import traceback
 from PIL import Image, ImageDraw, ImageFont
@@ -14,13 +15,14 @@ from dotenv import load_dotenv
 from fontTools.ttLib import TTFont
 from io import BytesIO
 from pathlib import Path
+import plotly.graph_objects as go
 from typing import List, Dict, Callable,Optional,Any
 from urllib.parse import urlparse
 
 from config import read_configs
 from dumpy import dumpy
 
-configs = read_configs(dev=False)
+configs = read_configs(dev=True)
 TOKEN: str = configs["Token"]
 MY_GUILDS: List[discord.Object] = configs["guilds"]
 
@@ -78,6 +80,23 @@ async def banner(ctx:discord.Interaction,user:discord.Member):
         await ctx.response.send_message(f"User {str(user)} does not have a banner",ephemeral=True)
     else:
         await ctx.response.send_message(banner.url)
+
+@client.tree.command(name="piechart", description="Creates a pie chart")
+@app_commands.describe(labels="labels seperated by ,",values="chart values seperated by ,",title="title of chart")
+async def piechart(ctx:discord.Interaction,labels:str,values:str,title:str):
+    try:
+        labelslst = labels.split(",")
+        valueslst = values.split(",")
+        fig = go.Figure(data=[go.Pie(labels=labelslst, values=valueslst,textinfo="none")])
+        fig.update_layout(title={"text":title,"x":0.5})
+        img_bytes = fig.to_image(format="png")
+        await ctx.response.send_message(
+                    file=discord.File(fp=BytesIO(img_bytes), filename=f'{str(uuid.uuid4())}.png'))
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.response.send_message("Error creating pie chart")
+
 
 
 
