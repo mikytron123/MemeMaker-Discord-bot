@@ -1,13 +1,15 @@
 import configparser
 import ast
-from typing import Dict, List, TypedDict, Union
+from typing import List, TypedDict
 import discord
 
-class CONFIG(TypedDict):
-    Token:str
-    guilds:List[discord.Object]
 
-def read_configs(dev:bool=False)->CONFIG:
+class CONFIG(TypedDict):
+    Token: str
+    guilds: List[discord.Object]
+
+
+def read_configs(dev: bool = False) -> CONFIG:
     conf = configparser.ConfigParser()
     if dev:
         print("using dev config")
@@ -17,6 +19,6 @@ def read_configs(dev:bool=False)->CONFIG:
         configfile = "config.ini"
     conf.read(configfile)
     TOKEN = conf["DISCORD"]["token"]
-    guild_list:List[int] = ast.literal_eval(conf["DISCORD"]["guilds"])
+    guild_list: List[int] = ast.literal_eval(conf["DISCORD"]["guilds"])
     MY_GUILDS = [discord.Object(id=guild) for guild in guild_list]
-    return {"Token":TOKEN,"guilds":MY_GUILDS}
+    return {"Token": TOKEN, "guilds": MY_GUILDS}
