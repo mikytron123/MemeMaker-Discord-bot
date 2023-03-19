@@ -2,14 +2,11 @@ import configparser
 import ast
 from typing import List, TypedDict
 import discord
+from collections import namedtuple
 
+configuration = namedtuple("config","token guilds")
 
-class CONFIG(TypedDict):
-    Token: str
-    guilds: List[discord.Object]
-
-
-def read_configs(dev: bool = False) -> CONFIG:
+def read_configs(dev: bool = False) -> configuration:
     conf = configparser.ConfigParser()
     if dev:
         print("using dev config")
@@ -21,4 +18,5 @@ def read_configs(dev: bool = False) -> CONFIG:
     TOKEN = conf["DISCORD"]["token"]
     guild_list: List[int] = ast.literal_eval(conf["DISCORD"]["guilds"])
     MY_GUILDS = [discord.Object(id=guild) for guild in guild_list]
-    return {"Token": TOKEN, "guilds": MY_GUILDS}
+    return configuration(token=TOKEN,guilds=MY_GUILDS)
+

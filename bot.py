@@ -1,8 +1,6 @@
 # bot.py
 import aiohttp
 import discord
-import io
-import os
 import random
 import uuid
 import requests
@@ -21,9 +19,9 @@ from urllib.parse import urlparse
 from config import read_configs
 from dumpy import dumpy
 
-configs = read_configs(dev=True)
-TOKEN: str = configs["Token"]
-MY_GUILDS: List[discord.Object] = configs["guilds"]
+configs = read_configs(dev=False)
+TOKEN: str = configs.token
+MY_GUILDS: List[discord.Object] = configs.guilds
 
 
 def has_glyph(font, glyph):
@@ -82,7 +80,10 @@ async def banner(ctx: discord.Interaction, user: discord.Member):
             f"User {str(user)} does not have a banner", ephemeral=True
         )
     else:
-        await ctx.response.send_message(banner.url)
+        embed = discord.Embed(description="User Banner")
+        embed.set_image(url=banner.url)
+        embed.set_author(name=user.name, icon_url=user.default_avatar.url)
+        await ctx.response.send_message(embed=embed)
 
 
 @client.tree.command(name="piechart", description="Creates a pie chart")
@@ -195,7 +196,7 @@ async def giframe(
             return
         if file is not None:
             if file.content_type is None:
-                await ctx.followup.send("Unkown file type", ephemeral=True)
+                await ctx.followup.send("Unknown file type", ephemeral=True)
                 return
             if "gif" not in file.content_type:
                 await ctx.followup.send("file must be a gif", ephemeral=True)
@@ -461,11 +462,11 @@ async def speechbubble(ctx: discord.Interaction, file: discord.Attachment):
         bubble = bubble.resize((img.size[0], round(img.size[1] / 4)))
         finalwidth = img.size[0]
         finalheight = img.size[1] + bubble.size[1]
-        
+
         newimg = Image.new("RGB", (finalwidth, finalheight))
         newimg.paste(bubble, (0, 0))
         newimg.paste(img, (0, bubble.size[1]))
-        
+
         with BytesIO() as image_binary:
             newimg.save(image_binary, "PNG")
             image_binary.seek(0)

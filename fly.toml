@@ -1,0 +1,9 @@
+# fly.toml file generated for mememaker on 2022-09-25T19:00:48-04:00
+
+app = "mememaker"
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = []
+
+[env]
+
