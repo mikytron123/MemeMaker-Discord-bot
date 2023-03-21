@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 
 from config import read_configs
 from dumpy import dumpy
+from utils import getimagedata
 
 configs = read_configs(dev=False)
 TOKEN: str = configs.token
@@ -113,27 +114,32 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
 
 
 @client.tree.command(name="apng2gif", description="Convert apng file to gif")
-@app_commands.describe(file="apng file")
-async def apng2gif(ctx: discord.Interaction, file: discord.Attachment):
+@app_commands.describe(file="apng file",link="direct url to apng file")
+async def apng2gif(ctx: discord.Interaction, file: Optional[discord.Attachment]=None,link:str=""):
     await ctx.response.defer()
     try:
-        if file.content_type is None:
-            await ctx.followup.send("Unknown file type", ephemeral=True)
+        imagedata = await getimagedata(file,link,"png",".png")
+        error= imagedata.error
+        
+        if error != "":
+            await ctx.followup.send(error,ephemeral=True)
             return
-        if not file.content_type.endswith("png"):
-            await ctx.followup.send("File must be apng", ephemeral=True)
-            return
-        response = requests.get(file.url)
-        with open(file.filename, "wb") as f:
-            f.write(response.content)
-
-        apnggif(file.filename)
+        
+        imagebytes = imagedata.imagebytes
+        filename = imagedata.filename
+        
+        with open(filename,"wb") as f:
+            f.write(imagebytes)
+        #convert to gif
+        apnggif(filename)
+        
         await ctx.followup.send(
-            file=discord.File(str(Path(file.filename).with_suffix(".gif")))
+            file=discord.File(str(Path(filename).with_suffix(".gif")))
         )
-        filepath = Path(file.filename)
+        #remove temporary file
+        filepath = Path(filename)
         filepath.unlink()
-        filepath = Path(file.filename).with_suffix(".gif")
+        filepath = Path(filename).with_suffix(".gif")
         filepath.unlink()
 
     except Exception as e:
@@ -189,33 +195,16 @@ async def giframe(
 ):
     await ctx.response.defer()
     try:
-        if (file is None and link == "") or (file is not None and link != ""):
-            await ctx.followup.send(
-                "Must specify exactly one of file or link argument", ephemeral=True
-            )
+
+        imagedata = await getimagedata(file,link,"gif",".png")
+        error = imagedata.error
+
+        if error != "":
+            await ctx.followup.send(error,ephemeral=True)
             return
-        if file is not None:
-            if file.content_type is None:
-                await ctx.followup.send("Unknown file type", ephemeral=True)
-                return
-            if "gif" not in file.content_type:
-                await ctx.followup.send("file must be a gif", ephemeral=True)
-                return
-            url = file.url
-            response = requests.get(url)
-            imgbytes = response.content
-            filename = str(Path(file.filename).with_suffix(".png"))
-        elif link != "":
-            response = requests.get(link)
-            content_type = response.headers["Content-Type"]
-            if "gif" not in content_type:
-                await ctx.followup.send("link must redirect to a gif", ephemeral=True)
-                return
-            imgbytes = response.content
-            filename = str(Path(urlparse(link).path.split("/")[-1]).with_suffix(".png"))
-        else:
-            filename = ""
-            imgbytes = None
+
+        imgbytes = imagedata.imagebytes
+        filename = imagedata.filename
 
         # read image from url
         gif = Image.open(BytesIO(imgbytes))
@@ -237,17 +226,21 @@ async def giframe(
 
 
 @client.tree.command(name="amogus", description="Creates amogus image")
-@app_commands.describe(file="image file")
-async def amogus(ctx: discord.Interaction, file: discord.Attachment):
+@app_commands.describe(file="image file",link="direct url to image")
+async def amogus(ctx: discord.Interaction, file: Optional[discord.Attachment]=None,link:str=""):
     await ctx.response.defer()
     try:
-        if (
-            file.content_type is not None
-            and file.content_type.startswith("image") == False
-        ):
-            await ctx.followup.send("file must be an image", ephemeral=True)
+
+        imagedata = await getimagedata(file,link,"image",".gif")
+        error = imagedata.error
+        
+        if error != "":
+            await ctx.followup.send(error,ephemeral=True)
             return
-        frames = dumpy(file.url)
+        imagebytes = imagedata.imagebytes
+        filename = imagedata.filename
+
+        frames = dumpy(imagebytes)
         frame_one = frames[0]
         with BytesIO() as gif_binary:
             frame_one.save(
@@ -261,7 +254,7 @@ async def amogus(ctx: discord.Interaction, file: discord.Attachment):
             gif_binary.seek(0)
             await ctx.followup.send(
                 file=discord.File(
-                    fp=gif_binary, filename=str(Path(file.filename).with_suffix(".gif"))
+                    fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
                 )
             )
     except Exception as e:
