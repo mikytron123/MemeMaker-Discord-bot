@@ -3,18 +3,16 @@ import io
 from typing import Tuple
 
 import numpy as np
-import requests
 from PIL import Image
 
 
-def dumpy(file: str):
+def dumpy(imagebytes: bytes):
     background: str = "dumpy/black.png"
 
     ty = 20  # // width value
     backgroundimg = Image.open(background).convert("RGB")
 
-    resp = requests.get(file)
-    inputimg = Image.open(io.BytesIO(resp.content))
+    inputimg = Image.open(io.BytesIO(imagebytes)).convert("RGB")
 
     # Calculates size from height
     txd = inputimg.width / inputimg.height
@@ -112,7 +110,6 @@ def shader(t, pRgb: Tuple[int, int, int]):
     c = (197, 17, 17)
     c2 = (122, 8, 56)
     entry = pRgb
-
     # brightness check. If the pixel is too dim, the brightness is floored to the
     # standard "black" level.
     hsb = colorsys.rgb_to_hsv(entry[0], entry[1], entry[2])
@@ -144,6 +141,7 @@ def shader(t, pRgb: Tuple[int, int, int]):
     # fills in img
 
     tmatrix = np.array(t)
+
     tmatrix[
         (tmatrix[:, :, 0] == c[0])
         & (tmatrix[:, :, 1] == c[1])
