@@ -156,7 +156,7 @@ async def spongebob(ctx: discord.Interaction, text: str):
     await ctx.response.defer()
     try:
         addstr = str(text)
-        img = Image.open("spongebob.jpg")
+        img = Image.open("images/spongebob.jpg")
         draw = ImageDraw.Draw(img)
         startlen = 590
         FONT_SIZE = 55
