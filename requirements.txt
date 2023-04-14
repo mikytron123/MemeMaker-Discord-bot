@@ -1,7 +1,6 @@
 pillow
 requests
 aiohttp
-python-dotenv
 fontTools
 discord.py
 numpy

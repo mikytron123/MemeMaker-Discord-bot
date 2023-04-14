@@ -226,8 +226,12 @@ async def giframe(
 
 
 @client.tree.command(name="amogus", description="Creates amogus image")
-@app_commands.describe(file="image file",link="direct url to image")
-async def amogus(ctx: discord.Interaction, file: Optional[discord.Attachment]=None,link:str=""):
+@app_commands.describe(file="image file",link="direct url to image",
+                       lines="height of output image")
+async def amogus(ctx: discord.Interaction,
+                  file: Optional[discord.Attachment]=None,
+                  link:str="",
+                  lines:discord.app_commands.Range[int,10,30]=20):
     await ctx.response.defer()
     try:
 
@@ -240,7 +244,7 @@ async def amogus(ctx: discord.Interaction, file: Optional[discord.Attachment]=No
         imagebytes = imagedata.imagebytes
         filename = imagedata.filename
 
-        frames = dumpy(imagebytes)
+        frames = dumpy(imagebytes,lines)
         frame_one = frames[0]
         with BytesIO() as gif_binary:
             frame_one.save(
@@ -357,9 +361,9 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
         timeout = await view.wait()
         if timeout:
             if isinstance(msg, discord.WebhookMessage):
-                await msg.edit(view=None)
+                await msg.edit(view=None) # type: ignore
             elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_response(view=None)
+                await msg.edit_original_response(view=None) # type: ignore
 
     except Exception as e:
         print(e)
@@ -414,9 +418,9 @@ async def kym(ctx: discord.Interaction, search: str):
         timeout = await view.wait()
         if timeout:
             if isinstance(msg, discord.WebhookMessage):
-                await msg.edit(view=None)
+                await msg.edit(view=None) # type: ignore
             elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_response(view=None)
+                await msg.edit_original_response(view=None) # type: ignore
 
     except Exception as e:
         print(e)

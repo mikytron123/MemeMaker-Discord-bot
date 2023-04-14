@@ -1,15 +1,14 @@
 import colorsys
 import io
-from typing import Tuple
+from typing import Tuple,Optional
 
 import numpy as np
 from PIL import Image
 
 
-def dumpy(imagebytes: bytes):
+def dumpy(imagebytes: bytes,ty:int)->list[Image.Image]:
     background: str = "dumpy/black.png"
 
-    ty = 20  # // width value
     backgroundimg = Image.open(background).convert("RGB")
 
     inputimg = Image.open(io.BytesIO(imagebytes)).convert("RGB")
@@ -35,7 +34,7 @@ def dumpy(imagebytes: bytes):
     iy = (ty * sourceY) + (pad * 2)
 
     # Actually makes the frames
-    frames = []
+    frames:list[Image.Image] = []
 
     # these constants are now variables.
     fac = 1.00
@@ -89,9 +88,12 @@ def dumpy(imagebytes: bytes):
                 pixel = shader(pixel, pixelinputimg[x, y])
                 # overlays it (if not null)
                 if pixel is not None:
-                    frames[indexx] = overlayImages(
+                    overlaid_image = overlayImages(
                         frames[indexx], pixel, (x * moxF) + padF, (y * moyF) + padF
                     )
+                    if overlaid_image is not None:
+                        frames[indexx] = overlaid_image
+
 
                 # Handles animating
                 count += 1
@@ -156,7 +158,7 @@ def shader(t, pRgb: Tuple[int, int, int]):
     return convertedImage
 
 
-def overlayImages(bgImage, fgImage, locateX: int, locateY: int):
+def overlayImages(bgImage:Image.Image, fgImage:Image.Image, locateX: int, locateY: int)->Optional[Image.Image]:
     if fgImage.height > bgImage.height or fgImage.width > fgImage.width:
         print(
             "Foreground Image Is Bigger In One or Both Dimensions"
