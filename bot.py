@@ -5,7 +5,7 @@ import random
 import uuid
 import requests
 import traceback
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont,ImageSequence
 from apnggif import apnggif
 from bs4 import BeautifulSoup
 from discord import app_commands
@@ -191,7 +191,9 @@ async def spongebob(ctx: discord.Interaction, text: str):
 @client.tree.command(name="giframe", description="Returns random frame from gif")
 @app_commands.describe(file="gif file", link="direct url link to gif")
 async def giframe(
-    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
+    ctx: discord.Interaction,
+    file: Optional[discord.Attachment] = None,
+    link: str = ""
 ):
     await ctx.response.defer()
     try:
@@ -219,6 +221,59 @@ async def giframe(
             await ctx.followup.send(
                 file=discord.File(fp=image_binary, filename=filename)
             )
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error generating random frame", ephemeral=True)
+
+@client.tree.command(name="reversegif", description="Reverses a gif")
+@app_commands.describe(file="gif file", link="direct url link to gif")
+async def reversegif(
+    ctx: discord.Interaction,
+    file: Optional[discord.Attachment] = None,
+    link: str = ""
+):
+    await ctx.response.defer()
+    try:
+
+        imagedata = await getimagedata(file,link,"gif",".gif")
+        error = imagedata.error
+
+        if error != "":
+            await ctx.followup.send(error,ephemeral=True)
+            return
+
+        imgbytes = imagedata.imagebytes
+        filename = imagedata.filename
+
+        # read image from url
+        gif = Image.open(BytesIO(imgbytes))
+        frames:list = []
+        
+        for frame in ImageSequence.Iterator(gif):
+            frames.append(frame.copy())
+
+        # Reverse the frames
+        frames.reverse()
+        frame_one = frames[0]
+        
+        with BytesIO() as gif_binary:
+            frame_one.save(
+                gif_binary,
+                format="GIF",
+                append_images=frames,
+                save_all=True,
+                loop=0,
+                disposal=2
+            )
+            gif_binary.seek(0)
+            await ctx.followup.send(
+                file=discord.File(
+                    fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
+                )
+            )
+
+
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -254,6 +309,7 @@ async def amogus(ctx: discord.Interaction,
                 save_all=True,
                 duration=100,
                 loop=0,
+                disposal=2
             )
             gif_binary.seek(0)
             await ctx.followup.send(
