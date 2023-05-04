@@ -1,5 +1,6 @@
 # bot.py
 import aiohttp
+from pyrlottie import run,convSingleLottie,LottieFile
 import discord
 import random
 import uuid
@@ -19,6 +20,9 @@ from urllib.parse import urlparse
 from config import read_configs
 from dumpy import dumpy
 from utils import getimagedata
+
+import nest_asyncio
+nest_asyncio.apply()
 
 configs = read_configs(dev=False)
 TOKEN: str = configs.token
@@ -132,6 +136,40 @@ async def apng2gif(ctx: discord.Interaction, file: Optional[discord.Attachment]=
             f.write(imagebytes)
         #convert to gif
         apnggif(filename)
+        
+        await ctx.followup.send(
+            file=discord.File(str(Path(filename).with_suffix(".gif")))
+        )
+        #remove temporary file
+        filepath = Path(filename)
+        filepath.unlink()
+        filepath = Path(filename).with_suffix(".gif")
+        filepath.unlink()
+
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error converting to gif", ephemeral=True)
+
+@client.tree.command(name="lottie2gif", description="Convert lottie file to gif")
+@app_commands.describe(file="lottie file",link="direct url to lottie file")
+async def lottie2gif(ctx: discord.Interaction, file: Optional[discord.Attachment]=None,link:str=""):
+    await ctx.response.defer()
+    try:
+        imagedata = await getimagedata(file,link,"json",".json")
+        error= imagedata.error
+        
+        if error != "":
+            await ctx.followup.send(error,ephemeral=True)
+            return
+        
+        imagebytes = imagedata.imagebytes
+        filename = imagedata.filename
+        
+        with open(filename,"wb") as f:
+            f.write(imagebytes)
+        #convert to gif
+        run(convSingleLottie(LottieFile(filename),set([str(Path(filename).with_suffix(".gif"))])))
         
         await ctx.followup.send(
             file=discord.File(str(Path(filename).with_suffix(".gif")))
