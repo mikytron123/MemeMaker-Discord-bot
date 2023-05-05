@@ -154,30 +154,37 @@ async def apng2gif(
         print(traceback.format_exc())
         await ctx.followup.send("Error converting to gif", ephemeral=True)
 
+
 @client.tree.command(name="lottie2gif", description="Convert lottie file to gif")
-@app_commands.describe(file="lottie file",link="direct url to lottie file")
-async def lottie2gif(ctx: discord.Interaction, file: Optional[discord.Attachment]=None,link:str=""):
+@app_commands.describe(file="lottie file", link="direct url to lottie file")
+async def lottie2gif(
+    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
+):
     await ctx.response.defer()
     try:
-        imagedata = await getimagedata(file,link,"json",".json")
-        error= imagedata.error
-        
+        imagedata = await getimagedata(file, link, "json", ".json")
+        error = imagedata.error
+
         if error != "":
-            await ctx.followup.send(error,ephemeral=True)
+            await ctx.followup.send(error, ephemeral=True)
             return
-        
+
         imagebytes = imagedata.imagebytes
         filename = imagedata.filename
-        
-        with open(filename,"wb") as f:
+
+        with open(filename, "wb") as f:
             f.write(imagebytes)
-        #convert to gif
-        run(convSingleLottie(LottieFile(filename),set([str(Path(filename).with_suffix(".gif"))])))
-        
+        # convert to gif
+        run(
+            convSingleLottie(
+                LottieFile(filename), set([str(Path(filename).with_suffix(".gif"))])
+            )
+        )
+
         await ctx.followup.send(
             file=discord.File(str(Path(filename).with_suffix(".gif")))
         )
-        #remove temporary file
+        # remove temporary file
         filepath = Path(filename)
         filepath.unlink()
         filepath = Path(filename).with_suffix(".gif")
@@ -454,9 +461,9 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
         timeout = await view.wait()
         if timeout:
             if isinstance(msg, discord.WebhookMessage):
-                await msg.edit(view=None) # type: ignore
+                await msg.edit(view=None)  # type: ignore
             elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_response(view=None) # type: ignore
+                await msg.edit_original_response(view=None)  # type: ignore
 
     except Exception as e:
         print(e)
