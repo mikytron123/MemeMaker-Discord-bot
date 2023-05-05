@@ -366,6 +366,62 @@ async def amogus(
         print(traceback.format_exc())
         await ctx.followup.send("Error creating amogus gif", ephemeral=True)
 
+async def memerequest(background:str,text:str)->bytes:
+    baseurl = "https://api.memegen.link/images/custom"
+    payload = {"background": background, "text": text.split(",")}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=baseurl, data=payload) as response:
+            response = await response.json()
+        async with session.get(response["url"]) as resp:
+            imagebytes = await resp.read()
+            return imagebytes
+
+
+class Form(discord.ui.Modal, title="Form"):
+    def __init__(self,url:str,filename) -> None:
+        super().__init__()
+        self.background = url
+        self.filename = filename
+
+    # This will be a short input, where the user can enter their name
+    # It will also have a placeholder, as denoted by the `placeholder` kwarg.
+    # By default, it is required and is a short-style input which is exactly
+    # what we want.
+    text = discord.ui.TextInput(
+        label="caption",
+        placeholder="Enter image caption ...",
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        imagebytes = await memerequest(self.background,self.text.value)
+        await interaction.response.send_message(
+                file=discord.File(
+                    fp=BytesIO(imagebytes), filename=self.filename
+                ),
+          
+            )
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception
+    ) -> None:
+        await interaction.response.send_message(
+            "Oops! Something went wrong.", ephemeral=True
+        )
+
+        # Make sure we know what the error actually is
+        traceback.print_exception(type(error), error, error.__traceback__)
+
+
+class EditView(discord.ui.View):
+    def __init__(self,url:str,filename:str) -> None:
+        super().__init__(timeout=20)
+        self.background = url
+        self.filename = filename
+
+    @discord.ui.button(style=discord.ButtonStyle.gray, label="Edit")
+    async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(Form(self.background,self.filename))
+
 
 @client.tree.command(name="creatememe", description="Create meme from an image")
 @app_commands.describe(
@@ -380,18 +436,20 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
         ):
             await ctx.followup.send("file must be an image", ephemeral=True)
             return
-        async with aiohttp.ClientSession() as session:
-
-            baseurl = "https://api.memegen.link/images/custom"
-            payload = {"background": file.url, "text": text.split(",")}
-            async with session.post(url=baseurl, data=payload) as response:
-                response = await response.json()
-            async with session.get(response["url"]) as resp:
-                await ctx.followup.send(
-                    file=discord.File(
-                        fp=BytesIO(await resp.read()), filename=file.filename
-                    )
-                )
+        imagebytes = await memerequest(file.url,text)
+        view = EditView(file.url,file.filename)
+        msg = await ctx.followup.send(
+            file=discord.File(
+                fp=BytesIO(imagebytes), filename=file.filename
+            ),
+            view=view,
+        )
+        timeout = await view.wait()
+        if timeout:
+            if isinstance(msg, discord.WebhookMessage):
+                await msg.edit(view=None)  # type: ignore
+            elif isinstance(msg, discord.Interaction):
+                await msg.edit_original_response(view=None)  # type: ignore
 
     except Exception as e:
         print(e)
