@@ -1,12 +1,12 @@
 # bot.py
 import aiohttp
-from pyrlottie import run,convSingleLottie,LottieFile
+from pyrlottie import run, convSingleLottie, LottieFile
 import discord
 import random
 import uuid
 import requests
 import traceback
-from PIL import Image, ImageDraw, ImageFont,ImageSequence
+from PIL import Image, ImageDraw, ImageFont, ImageSequence
 from apnggif import apnggif
 from bs4 import BeautifulSoup
 from discord import app_commands
@@ -22,6 +22,7 @@ from dumpy import dumpy
 from utils import getimagedata
 
 import nest_asyncio
+
 nest_asyncio.apply()
 
 configs = read_configs(dev=False)
@@ -118,29 +119,31 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
 
 
 @client.tree.command(name="apng2gif", description="Convert apng file to gif")
-@app_commands.describe(file="apng file",link="direct url to apng file")
-async def apng2gif(ctx: discord.Interaction, file: Optional[discord.Attachment]=None,link:str=""):
+@app_commands.describe(file="apng file", link="direct url to apng file")
+async def apng2gif(
+    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
+):
     await ctx.response.defer()
     try:
-        imagedata = await getimagedata(file,link,"png",".png")
-        error= imagedata.error
-        
+        imagedata = await getimagedata(file, link, "png", ".png")
+        error = imagedata.error
+
         if error != "":
-            await ctx.followup.send(error,ephemeral=True)
+            await ctx.followup.send(error, ephemeral=True)
             return
-        
+
         imagebytes = imagedata.imagebytes
         filename = imagedata.filename
-        
-        with open(filename,"wb") as f:
+
+        with open(filename, "wb") as f:
             f.write(imagebytes)
-        #convert to gif
+        # convert to gif
         apnggif(filename)
-        
+
         await ctx.followup.send(
             file=discord.File(str(Path(filename).with_suffix(".gif")))
         )
-        #remove temporary file
+        # remove temporary file
         filepath = Path(filename)
         filepath.unlink()
         filepath = Path(filename).with_suffix(".gif")
@@ -229,18 +232,15 @@ async def spongebob(ctx: discord.Interaction, text: str):
 @client.tree.command(name="giframe", description="Returns random frame from gif")
 @app_commands.describe(file="gif file", link="direct url link to gif")
 async def giframe(
-    ctx: discord.Interaction,
-    file: Optional[discord.Attachment] = None,
-    link: str = ""
+    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
 ):
     await ctx.response.defer()
     try:
-
-        imagedata = await getimagedata(file,link,"gif",".png")
+        imagedata = await getimagedata(file, link, "gif", ".png")
         error = imagedata.error
 
         if error != "":
-            await ctx.followup.send(error,ephemeral=True)
+            await ctx.followup.send(error, ephemeral=True)
             return
 
         imgbytes = imagedata.imagebytes
@@ -264,21 +264,19 @@ async def giframe(
         print(traceback.format_exc())
         await ctx.followup.send("Error generating random frame", ephemeral=True)
 
+
 @client.tree.command(name="reversegif", description="Reverses a gif")
 @app_commands.describe(file="gif file", link="direct url link to gif")
 async def reversegif(
-    ctx: discord.Interaction,
-    file: Optional[discord.Attachment] = None,
-    link: str = ""
+    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
 ):
     await ctx.response.defer()
     try:
-
-        imagedata = await getimagedata(file,link,"gif",".gif")
+        imagedata = await getimagedata(file, link, "gif", ".gif")
         error = imagedata.error
 
         if error != "":
-            await ctx.followup.send(error,ephemeral=True)
+            await ctx.followup.send(error, ephemeral=True)
             return
 
         imgbytes = imagedata.imagebytes
@@ -286,15 +284,15 @@ async def reversegif(
 
         # read image from url
         gif = Image.open(BytesIO(imgbytes))
-        frames:list = []
-        
+        frames: list = []
+
         for frame in ImageSequence.Iterator(gif):
             frames.append(frame.copy())
 
         # Reverse the frames
         frames.reverse()
         frame_one = frames[0]
-        
+
         with BytesIO() as gif_binary:
             frame_one.save(
                 gif_binary,
@@ -302,7 +300,7 @@ async def reversegif(
                 append_images=frames,
                 save_all=True,
                 loop=0,
-                disposal=2
+                disposal=2,
             )
             gif_binary.seek(0)
             await ctx.followup.send(
@@ -311,7 +309,6 @@ async def reversegif(
                 )
             )
 
-
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -319,25 +316,27 @@ async def reversegif(
 
 
 @client.tree.command(name="amogus", description="Creates amogus image")
-@app_commands.describe(file="image file",link="direct url to image",
-                       lines="height of output image")
-async def amogus(ctx: discord.Interaction,
-                  file: Optional[discord.Attachment]=None,
-                  link:str="",
-                  lines:discord.app_commands.Range[int,10,30]=20):
+@app_commands.describe(
+    file="image file", link="direct url to image", lines="height of output image"
+)
+async def amogus(
+    ctx: discord.Interaction,
+    file: Optional[discord.Attachment] = None,
+    link: str = "",
+    lines: discord.app_commands.Range[int, 10, 30] = 20,
+):
     await ctx.response.defer()
     try:
-
-        imagedata = await getimagedata(file,link,"image",".gif")
+        imagedata = await getimagedata(file, link, "image", ".gif")
         error = imagedata.error
-        
+
         if error != "":
-            await ctx.followup.send(error,ephemeral=True)
+            await ctx.followup.send(error, ephemeral=True)
             return
         imagebytes = imagedata.imagebytes
         filename = imagedata.filename
 
-        frames = dumpy(imagebytes,lines)
+        frames = dumpy(imagebytes, lines)
         frame_one = frames[0]
         with BytesIO() as gif_binary:
             frame_one.save(
@@ -347,7 +346,7 @@ async def amogus(ctx: discord.Interaction,
                 save_all=True,
                 duration=100,
                 loop=0,
-                disposal=2
+                disposal=2,
             )
             gif_binary.seek(0)
             await ctx.followup.send(
@@ -512,9 +511,9 @@ async def kym(ctx: discord.Interaction, search: str):
         timeout = await view.wait()
         if timeout:
             if isinstance(msg, discord.WebhookMessage):
-                await msg.edit(view=None) # type: ignore
+                await msg.edit(view=None)  # type: ignore
             elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_response(view=None) # type: ignore
+                await msg.edit_original_response(view=None)  # type: ignore
 
     except Exception as e:
         print(e)
