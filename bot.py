@@ -16,6 +16,7 @@ from pathlib import Path
 import plotly.graph_objects as go
 from typing import List, Dict, Callable, Optional, Any
 from urllib.parse import urlparse
+import cv2
 
 from config import read_configs
 from dumpy import dumpy
@@ -25,7 +26,7 @@ import nest_asyncio
 
 nest_asyncio.apply()
 
-configs = read_configs(dev=False)
+configs = read_configs(dev=True)
 TOKEN: str = configs.token
 MY_GUILDS: List[discord.Object] = configs.guilds
 
@@ -177,13 +178,58 @@ async def lottie2gif(
         # convert to gif
         run(
             convSingleLottie(
-                LottieFile(filename), set([str(Path(filename).with_suffix(".gif"))])
+                lottieFile=LottieFile(filename),
+                destFiles= set([str(Path(filename).with_suffix(".gif"))]),
             )
         )
+        #TODO find better method for removing background
+        cam = cv2.VideoCapture(str(Path(filename).with_suffix(".gif")))
+        frames = []
+        while True:
+            # reading from frame
+            ret, frame = cam.read()
 
-        await ctx.followup.send(
-            file=discord.File(str(Path(filename).with_suffix(".gif")))
-        )
+            if ret:
+                # if video is still left continue creating images
+
+                # writing the extracted images
+                tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                _, alpha = cv2.threshold(tmp, 0, 255, cv2.THRESH_BINARY)
+                b, g, r = cv2.split(frame)
+
+                # Making list of Red, Green, Blue
+                # Channels and alpha
+                rgba = [b, g, r, alpha]
+
+                # Using cv2.merge() to merge rgba
+                # into a coloured/multi-channeled image
+                dst = cv2.merge(rgba, 4)  # type: ignore
+                dst = cv2.cvtColor(dst, cv2.COLOR_BGRA2RGBA)
+                dst = Image.fromarray(dst)
+                frames.append(dst)
+
+            else:
+                break
+        cam.release()
+        frame_one = frames[0]
+
+        with BytesIO() as gif_binary:
+            frame_one.save(
+                gif_binary,
+                format="GIF",
+                append_images=frames[1:],
+                save_all=True,
+                loop=0,
+                disposal=2,
+                duration=30,
+            )
+            gif_binary.seek(0)
+            await ctx.followup.send(
+                file=discord.File(
+                    fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
+                )
+            )
+
         # remove temporary file
         filepath = Path(filename)
         filepath.unlink()
@@ -366,7 +412,8 @@ async def amogus(
         print(traceback.format_exc())
         await ctx.followup.send("Error creating amogus gif", ephemeral=True)
 
-async def memerequest(background:str,text:str)->bytes:
+
+async def memerequest(background: str, text: str) -> bytes:
     baseurl = "https://api.memegen.link/images/custom"
     payload = {"background": background, "text": text.split(",")}
     async with aiohttp.ClientSession() as session:
@@ -378,7 +425,7 @@ async def memerequest(background:str,text:str)->bytes:
 
 
 class Form(discord.ui.Modal, title="Form"):
-    def __init__(self,url:str,filename) -> None:
+    def __init__(self, url: str, filename) -> None:
         super().__init__()
         self.background = url
         self.filename = filename
@@ -393,13 +440,10 @@ class Form(discord.ui.Modal, title="Form"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        imagebytes = await memerequest(self.background,self.text.value)
+        imagebytes = await memerequest(self.background, self.text.value)
         await interaction.response.send_message(
-                file=discord.File(
-                    fp=BytesIO(imagebytes), filename=self.filename
-                ),
-          
-            )
+            file=discord.File(fp=BytesIO(imagebytes), filename=self.filename),
+        )
 
     async def on_error(
         self, interaction: discord.Interaction, error: Exception
@@ -409,18 +453,18 @@ class Form(discord.ui.Modal, title="Form"):
         )
 
         # Make sure we know what the error actually is
-        traceback.print_exception(type(error), error, error.__traceback__)
+        traceback.print_exception(type(error), error, error._filenamed_traceback__)
 
 
 class EditView(discord.ui.View):
-    def __init__(self,url:str,filename:str) -> None:
-        super().__init__(timeout=20)
+    def __init__(self, url: str, filename: str) -> None:
+        super().__init__(timeout=60)
         self.background = url
         self.filename = filename
 
     @discord.ui.button(style=discord.ButtonStyle.gray, label="Edit")
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(Form(self.background,self.filename))
+        await interaction.response.send_modal(Form(self.background, self.filename))
 
 
 @client.tree.command(name="creatememe", description="Create meme from an image")
@@ -436,12 +480,10 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
         ):
             await ctx.followup.send("file must be an image", ephemeral=True)
             return
-        imagebytes = await memerequest(file.url,text)
-        view = EditView(file.url,file.filename)
+        imagebytes = await memerequest(file.url, text)
+        view = EditView(file.url, file.filename)
         msg = await ctx.followup.send(
-            file=discord.File(
-                fp=BytesIO(imagebytes), filename=file.filename
-            ),
+            file=discord.File(fp=BytesIO(imagebytes), filename=file.filename),
             view=view,
         )
         timeout = await view.wait()
@@ -637,5 +679,5 @@ async def speechbubble(ctx: discord.Interaction, file: discord.Attachment):
         print(traceback.format_exc())
         await ctx.followup.send("Error adding speechbubble to image", ephemeral=True)
 
-
-client.run(TOKEN)
+if __name__ == "__main__":
+    client.run(TOKEN)
