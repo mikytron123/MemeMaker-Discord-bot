@@ -26,7 +26,7 @@ import nest_asyncio
 
 nest_asyncio.apply()
 
-configs = read_configs(dev=True)
+configs = read_configs(dev=False)
 TOKEN: str = configs.token
 MY_GUILDS: List[discord.Object] = configs.guilds
 
@@ -176,41 +176,32 @@ async def lottie2gif(
         with open(filename, "wb") as f:
             f.write(imagebytes)
         # convert to gif
+        gif_path = str(Path(filename).with_suffix(".gif"))
         run(
             convSingleLottie(
                 lottieFile=LottieFile(filename),
-                destFiles= set([str(Path(filename).with_suffix(".gif"))]),
+                destFiles= set([gif_path]),
+                backgroundColour="808080"
             )
         )
-        #TODO find better method for removing background
-        cam = cv2.VideoCapture(str(Path(filename).with_suffix(".gif")))
+        gif = Image.open(gif_path)
+        #TODO use matrix operation here
         frames = []
-        while True:
-            # reading from frame
-            ret, frame = cam.read()
+        for frame in ImageSequence.Iterator(gif):
+            rgba = frame.convert("RGBA")
+            datas = rgba.getdata()
+            
+            newData = []
+            for item in datas:
+                if item[0] == 128 and item[1] == 128 and item[2] == 128:  # finding black colour by its RGB value
+                    # storing a transparent value when we find a black colour
+                    newData.append((255, 255, 255, 0))
+                else:
+                    newData.append(item)  # other colours remain unchanged
+            
+            rgba.putdata(newData)
+            frames.append(rgba)
 
-            if ret:
-                # if video is still left continue creating images
-
-                # writing the extracted images
-                tmp = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                _, alpha = cv2.threshold(tmp, 0, 255, cv2.THRESH_BINARY)
-                b, g, r = cv2.split(frame)
-
-                # Making list of Red, Green, Blue
-                # Channels and alpha
-                rgba = [b, g, r, alpha]
-
-                # Using cv2.merge() to merge rgba
-                # into a coloured/multi-channeled image
-                dst = cv2.merge(rgba, 4)  # type: ignore
-                dst = cv2.cvtColor(dst, cv2.COLOR_BGRA2RGBA)
-                dst = Image.fromarray(dst)
-                frames.append(dst)
-
-            else:
-                break
-        cam.release()
         frame_one = frames[0]
 
         with BytesIO() as gif_binary:
@@ -226,9 +217,9 @@ async def lottie2gif(
             gif_binary.seek(0)
             await ctx.followup.send(
                 file=discord.File(
-                    fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
+                    fp=gif_binary, filename=gif_path)
                 )
-            )
+            
 
         # remove temporary file
         filepath = Path(filename)
