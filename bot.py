@@ -15,12 +15,13 @@ from io import BytesIO
 from pathlib import Path
 import plotly.graph_objects as go
 from typing import List, Dict, Callable, Optional, Any
-from urllib.parse import urlparse
-import cv2
 
 from config import read_configs
 from dumpy import dumpy
 from utils import getimagedata
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import nest_asyncio
 
@@ -444,7 +445,7 @@ class Form(discord.ui.Modal, title="Form"):
         )
 
         # Make sure we know what the error actually is
-        traceback.print_exception(type(error), error, error._filenamed_traceback__)
+        traceback.print_exception(type(error), error)
 
 
 class EditView(discord.ui.View):

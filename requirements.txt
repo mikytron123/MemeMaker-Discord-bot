@@ -10,4 +10,5 @@ plotly
 kaleido
 pyrlottie
 nest_asyncio
-opencv-python-headless
+python-dotenv
+
