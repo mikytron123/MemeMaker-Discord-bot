@@ -357,7 +357,7 @@ async def reversegif(
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error generating random frame", ephemeral=True)
+        await ctx.followup.send("Error reversing gif", ephemeral=True)
 
 
 @client.tree.command(name="amogus", description="Creates amogus image")
@@ -560,7 +560,7 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error creating meme", ephemeral=True)
+        await ctx.followup.send("Error searching meme templates", ephemeral=True)
 
 
 @client.tree.command(

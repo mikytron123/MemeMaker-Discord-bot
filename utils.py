@@ -31,11 +31,13 @@ async def getimagedata(file:Optional[discord.Attachment],link:str,filetype:str,s
         return Imagedata(imgbytes,filename)
     
     else:
-        if filetype=="gif":
-            if "tenor.com" in link:
-                if link.endswith(".mp4") or link.endswith(".webm"):
-                    return Imagedata(b'',"","link must redirect to a gif")
-                link = await tenorsearch(link)
+        if filetype=="gif" and "tenor.com" in link:
+            if link.endswith(".mp4") or link.endswith(".webm"):
+                return Imagedata(b'',"","link must redirect to a gif")
+            link = await tenorsearch(link)
+            if link=="error":
+                return Imagedata(b'',"","error finding gif on tenor, use direct gif instead")
+
         response = requests.get(link)
         if response.status_code<200 or response.status_code>300:
             return Imagedata(b'',"",f"Invalid url")
@@ -51,24 +53,21 @@ async def getimagedata(file:Optional[discord.Attachment],link:str,filetype:str,s
 async def tenorsearch(url:str)->str:
     # set the apikey and limit
     apikey = os.getenv("TENOR_TOKEN")
-    lmt = 2
     ckey = "MemeBot"  # set the client_key for the integration and use the same value for all API calls
-    search_term = "+".join(urlparse(url).path.split("/")[-1].split("-")[:-1])
-    # get the top 8 GIFs for the search term
+    id = url.split("-")[-1]
+
     r = requests.get(
-        "https://tenor.googleapis.com/v2/search",
+        "https://tenor.googleapis.com/v2/posts",
         params={"key":apikey,
-                "q":search_term,
+                "ids":id,
                 "client_key":ckey,
-                "media_filter":"mediumgif",
-                "limit":lmt}
+                "media_filter":"gif"}
         )
 
     if r.status_code == 200:
         # load the GIFs using the urls for the smaller GIF sizes
         response = r.json()
-        tenor_url = response["results"][0]["media_formats"]["mediumgif"]["url"]
+        tenor_url = response["results"][0]["media_formats"]["gif"]["url"]
         return tenor_url
     else:
-        print(r.content)
         return "error"
