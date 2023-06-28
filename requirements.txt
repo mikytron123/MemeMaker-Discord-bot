@@ -8,7 +8,6 @@ apnggif
 beautifulsoup4
 plotly
 kaleido
-pyrlottie
 nest_asyncio
 python-dotenv
 

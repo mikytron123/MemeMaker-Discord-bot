@@ -1,6 +1,5 @@
 # bot.py
 import aiohttp
-from pyrlottie import run, convSingleLottie, LottieFile
 import discord
 import random
 import uuid
@@ -145,83 +144,6 @@ async def apng2gif(
         await ctx.followup.send(
             file=discord.File(str(Path(filename).with_suffix(".gif")))
         )
-        # remove temporary file
-        filepath = Path(filename)
-        filepath.unlink()
-        filepath = Path(filename).with_suffix(".gif")
-        filepath.unlink()
-
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        await ctx.followup.send("Error converting to gif", ephemeral=True)
-
-
-@client.tree.command(name="lottie2gif", description="Convert lottie file to gif")
-@app_commands.describe(file="lottie file", link="direct url to lottie file")
-async def lottie2gif(
-    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
-):
-    await ctx.response.defer()
-    try:
-        imagedata = await getimagedata(file, link, "json", ".json")
-        error = imagedata.error
-
-        if error != "":
-            await ctx.followup.send(error, ephemeral=True)
-            return
-
-        imagebytes = imagedata.imagebytes
-        filename = imagedata.filename
-
-        with open(filename, "wb") as f:
-            f.write(imagebytes)
-        # convert to gif
-        gif_path = str(Path(filename).with_suffix(".gif"))
-        run(
-            convSingleLottie(
-                lottieFile=LottieFile(filename),
-                destFiles= set([gif_path]),
-                backgroundColour="808080"
-            )
-        )
-        gif = Image.open(gif_path)
-        #TODO use matrix operation here
-        frames = []
-        for frame in ImageSequence.Iterator(gif):
-            rgba = frame.convert("RGBA")
-            datas = rgba.getdata()
-            
-            newData = []
-            for item in datas:
-                if item[0] == 128 and item[1] == 128 and item[2] == 128:  # finding black colour by its RGB value
-                    # storing a transparent value when we find a black colour
-                    newData.append((255, 255, 255, 0))
-                else:
-                    newData.append(item)  # other colours remain unchanged
-            
-            rgba.putdata(newData)
-            frames.append(rgba)
-
-        frame_one = frames[0]
-
-        with BytesIO() as gif_binary:
-            frame_one.save(
-                gif_binary,
-                format="GIF",
-                append_images=frames[1:],
-                save_all=True,
-                loop=0,
-                disposal=2,
-                duration=30,
-            )
-            gif_binary.seek(0)
-            await ctx.followup.send(
-                file=discord.File(
-                    fp=gif_binary, filename=gif_path)
-                )
-            
-
         # remove temporary file
         filepath = Path(filename)
         filepath.unlink()
