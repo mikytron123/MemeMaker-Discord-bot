@@ -1,3 +1,4 @@
+from io import BytesIO
 import discord
 import requests
 from pathlib import Path
@@ -5,6 +6,9 @@ from urllib.parse import urlparse
 from collections import namedtuple
 from typing import NamedTuple,Optional
 import os
+import aiohttp
+from PIL import Image
+import random
 
 class Imagedata(NamedTuple):
     imagebytes: bytes
@@ -71,3 +75,25 @@ async def tenorsearch(url:str)->str:
         return tenor_url
     else:
         return "error"
+
+async def memerequest(background: str, text: str) -> bytes:
+    baseurl = "https://api.memegen.link/images/custom"
+    payload = {"background": background, "text": text.split(",")}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=baseurl, data=payload) as response:
+            response = await response.json()
+        async with session.get(response["url"]) as resp:
+            imagebytes = await resp.read()
+            return imagebytes
+
+async def seekrandomframe(imgbytes:bytes)->BytesIO:
+    gif = Image.open(BytesIO(imgbytes))
+    num_frames = gif.n_frames
+    # select random frame
+    rand_frame = random.randint(0, num_frames - 1)
+    gif.seek(rand_frame)
+    # send final image
+    image_binary = BytesIO()
+    gif.save(image_binary, "PNG")
+    image_binary.seek(0)
+    return image_binary

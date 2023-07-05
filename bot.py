@@ -17,7 +17,8 @@ from typing import List, Dict, Callable, Optional, Any
 
 from config import read_configs
 from dumpy import dumpy
-from utils import getimagedata
+from utils import getimagedata,memerequest, seekrandomframe
+from views import RerollView, Scroller,EditView
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -213,19 +214,23 @@ async def giframe(
         imgbytes = imagedata.imagebytes
         filename = imagedata.filename
 
-        # read image from url
-        gif = Image.open(BytesIO(imgbytes))
-        num_frames = gif.n_frames
-        # select random frame
-        rand_frame = random.randint(0, num_frames - 1)
-        gif.seek(rand_frame)
+        image_binary = await seekrandomframe(imgbytes)
         # send final image
-        with BytesIO() as image_binary:
-            gif.save(image_binary, "PNG")
-            image_binary.seek(0)
-            await ctx.followup.send(
-                file=discord.File(fp=image_binary, filename=filename)
-            )
+        view = RerollView(imgbytes,filename)
+
+
+        msg = await ctx.followup.send(
+                file=discord.File(fp=image_binary, filename=filename),
+                view=view
+        )
+        
+        timeout = await view.wait()
+        if timeout:
+            if isinstance(msg, discord.WebhookMessage):
+                await msg.edit(view=None)  # type: ignore
+            elif isinstance(msg, discord.Interaction):
+                await msg.edit_original_response(view=None)  # type: ignore
+
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -327,60 +332,6 @@ async def amogus(
         await ctx.followup.send("Error creating amogus gif", ephemeral=True)
 
 
-async def memerequest(background: str, text: str) -> bytes:
-    baseurl = "https://api.memegen.link/images/custom"
-    payload = {"background": background, "text": text.split(",")}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url=baseurl, data=payload) as response:
-            response = await response.json()
-        async with session.get(response["url"]) as resp:
-            imagebytes = await resp.read()
-            return imagebytes
-
-
-class Form(discord.ui.Modal, title="Form"):
-    def __init__(self, url: str, filename) -> None:
-        super().__init__()
-        self.background = url
-        self.filename = filename
-
-    # This will be a short input, where the user can enter their name
-    # It will also have a placeholder, as denoted by the `placeholder` kwarg.
-    # By default, it is required and is a short-style input which is exactly
-    # what we want.
-    text = discord.ui.TextInput(
-        label="caption",
-        placeholder="Enter image caption ...",
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        imagebytes = await memerequest(self.background, self.text.value)
-        await interaction.response.send_message(
-            file=discord.File(fp=BytesIO(imagebytes), filename=self.filename),
-        )
-
-    async def on_error(
-        self, interaction: discord.Interaction, error: Exception
-    ) -> None:
-        await interaction.response.send_message(
-            "Oops! Something went wrong.", ephemeral=True
-        )
-
-        # Make sure we know what the error actually is
-        traceback.print_exception(type(error), error)
-
-
-class EditView(discord.ui.View):
-    def __init__(self, url: str, filename: str) -> None:
-        super().__init__(timeout=60)
-        self.background = url
-        self.filename = filename
-
-    @discord.ui.button(style=discord.ButtonStyle.gray, label="Edit")
-    async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(Form(self.background, self.filename))
-
-
 @client.tree.command(name="creatememe", description="Create meme from an image")
 @app_commands.describe(
     file="image or gif file", text="top and bottom text seperated by ,"
@@ -412,35 +363,6 @@ async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: s
         print(traceback.format_exc())
         await ctx.followup.send("Error creating meme", ephemeral=True)
 
-
-class Scroller(discord.ui.View):
-    def __init__(
-        self,
-        responselst,
-        embedfunc: Optional[Callable[[Any, int], discord.Embed]] = None,
-    ) -> None:
-        super().__init__(timeout=20)
-        self.count = 0
-        self.responselst = responselst
-        self.embedfunc = embedfunc
-
-    @discord.ui.button(style=discord.ButtonStyle.gray, emoji="⬅️")
-    async def left(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.count = max(0, self.count - 1)
-        if self.embedfunc is not None:
-            embed = self.embedfunc(self.responselst, self.count)
-            await interaction.response.edit_message(embed=embed)
-            return
-        await interaction.response.edit_message(content=self.responselst[self.count])
-
-    @discord.ui.button(style=discord.ButtonStyle.gray, emoji="➡️")
-    async def right(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.count = min(len(self.responselst) - 1, self.count + 1)
-        if self.embedfunc is not None:
-            embed = self.embedfunc(self.responselst, self.count)
-            await interaction.response.edit_message(embed=embed)
-            return
-        await interaction.response.edit_message(content=self.responselst[self.count])
 
 
 @client.tree.command(name="memetemplates", description="List image templates")
@@ -524,12 +446,15 @@ async def kym(ctx: discord.Interaction, search: str):
                 and link["class"] == ["photo"]
             ):
                 alllinks.append(f"https://knowyourmeme.com{link['href']}")
+
         if len(alllinks) == 0:
             await ctx.followup.send("No results found", ephemeral=True)
             return
+        
         view = Scroller(alllinks)
         msg = await ctx.followup.send(content=alllinks[0], view=view)
         timeout = await view.wait()
+
         if timeout:
             if isinstance(msg, discord.WebhookMessage):
                 await msg.edit(view=None)  # type: ignore
@@ -556,21 +481,24 @@ async def info(ctx: discord.Interaction):
 
 
 @client.tree.command(name="speechbubble", description="Add speechbubble to image")
-@app_commands.describe(file="image file")
-async def speechbubble(ctx: discord.Interaction, file: discord.Attachment):
+@app_commands.describe(file="image file",link="direct link to image")
+async def speechbubble(ctx: discord.Interaction,
+                       file: Optional[discord.Attachment]=None,
+                       link:str=""):
     await ctx.response.defer()
     try:
-        if file.content_type is None:
-            await ctx.followup.send("Unkown file type", ephemeral=True)
-            return
-        if "image" not in file.content_type:
-            await ctx.followup.send("file must be a image", ephemeral=True)
-            return
-        bubble = Image.open("images/speechbubble.png")
-        response = requests.get(file.url)
-        img = Image.open(BytesIO(response.content))
+        imagedata = await getimagedata(file, link, "image", ".png")
+        error = imagedata.error
 
-        bubble = bubble.resize((img.size[0], round(img.size[1] / 4)))
+        if error != "":
+            await ctx.followup.send(error, ephemeral=True)
+            return
+
+        imagebytes = imagedata.imagebytes
+        filename = imagedata.filename
+        img = Image.open(BytesIO(imagebytes))
+        
+        bubble = Image.open("images/speechbubble.png").resize((img.size[0], round(img.size[1] / 4)))
         finalwidth = img.size[0]
         finalheight = img.size[1] + bubble.size[1]
 
@@ -584,7 +512,7 @@ async def speechbubble(ctx: discord.Interaction, file: discord.Attachment):
             await ctx.followup.send(
                 file=discord.File(
                     fp=image_binary,
-                    filename=str(Path(file.filename).with_suffix(".png")),
+                    filename=str(Path(filename).with_suffix(".png")),
                 )
             )
 
