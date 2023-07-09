@@ -9,6 +9,20 @@ import os
 import aiohttp
 from PIL import Image
 import random
+import argparse
+
+def parse_cli_args():
+    parser = argparse.ArgumentParser(
+                    prog='MemeBot',
+                    description='Discord Bot')
+    parser.add_argument("--prod",
+                        action="store_true",
+                        default=False
+                        )
+    
+    return parser.parse_args()
+
+
 
 class Imagedata(NamedTuple):
     imagebytes: bytes

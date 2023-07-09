@@ -18,7 +18,7 @@ from typing import List, Dict, Callable, Optional, Any
 
 from config import read_configs
 from dumpy import dumpy
-from utils import getimagedata,memerequest, seekrandomframe
+from utils import getimagedata,memerequest, seekrandomframe,parse_cli_args
 from views import RerollView, Scroller,EditView
 from dotenv import load_dotenv
 
@@ -28,7 +28,10 @@ import nest_asyncio
 
 nest_asyncio.apply()
 
-configs = read_configs(dev=True)
+
+args = parse_cli_args()
+
+configs = read_configs(prod=args.prod)
 TOKEN: str = configs.token
 MY_GUILDS: List[discord.Object] = configs.guilds
 

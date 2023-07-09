@@ -7,9 +7,9 @@ class Configuration(NamedTuple):
     token: str
     guilds: List[discord.Object]
 
-def read_configs(dev: bool = False) -> Configuration:
+def read_configs(prod:bool) -> Configuration:
     conf = configparser.ConfigParser()
-    if dev:
+    if prod==False:
         print("using dev config")
         configfile = "config-dev.ini"
     else:
