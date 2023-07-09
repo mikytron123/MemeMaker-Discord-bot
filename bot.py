@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageSequence
 from apnggif import apnggif
 from bs4 import BeautifulSoup
 from discord import app_commands
+from discord.ext import commands
 from fontTools.ttLib import TTFont
 from io import BytesIO
 from pathlib import Path
@@ -27,7 +28,7 @@ import nest_asyncio
 
 nest_asyncio.apply()
 
-configs = read_configs(dev=False)
+configs = read_configs(dev=True)
 TOKEN: str = configs.token
 MY_GUILDS: List[discord.Object] = configs.guilds
 
@@ -39,24 +40,24 @@ def has_glyph(font, glyph):
     return False
 
 
-class MyClient(discord.Client):
+class MyClient(commands.Bot):
     def __init__(self):
-        super().__init__(intents=discord.Intents.default())
-        self.tree = app_commands.CommandTree(self)
+        super().__init__(intents=discord.Intents.default(),command_prefix="$")
 
     async def setup_hook(self):
         for MY_GUILD in MY_GUILDS:
             self.tree.copy_global_to(guild=MY_GUILD)
             await self.tree.sync(guild=MY_GUILD)
+    
 
 
 client = MyClient()
-
 
 @client.event
 async def on_ready():
     print(f"Logged in as {client.user} (ID: {client.user.id})")
     print("------")
+    await client.load_extension("discordinfo")
 
 
 @client.tree.context_menu(name="StickerInfo")
@@ -77,21 +78,6 @@ async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
         print(e)
         print(traceback.format_exc())
         await ctx.response.send_message("Error finding sticker", ephemeral=True)
-
-
-@client.tree.command(name="banner", description="Get user banner")
-@app_commands.describe(user="server member")
-async def banner(ctx: discord.Interaction, user: discord.Member):
-    banner = (await ctx.client.fetch_user(user.id)).banner
-    if banner is None:
-        await ctx.response.send_message(
-            f"User {str(user)} does not have a banner", ephemeral=True
-        )
-    else:
-        embed = discord.Embed(description="User Banner")
-        embed.set_image(url=banner.url)
-        embed.set_author(name=user.name, icon_url=user.default_avatar.url)
-        await ctx.response.send_message(embed=embed)
 
 
 @client.tree.command(name="piechart", description="Creates a pie chart")
@@ -522,4 +508,6 @@ async def speechbubble(ctx: discord.Interaction,
         await ctx.followup.send("Error adding speechbubble to image", ephemeral=True)
 
 if __name__ == "__main__":
+    
     client.run(TOKEN)
+
