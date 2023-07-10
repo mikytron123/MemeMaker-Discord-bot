@@ -323,21 +323,35 @@ async def amogus(
 
 @client.tree.command(name="creatememe", description="Create meme from an image")
 @app_commands.describe(
-    file="image or gif file", text="top and bottom text seperated by ,"
+    file = "image or gif file",
+    text = "top and bottom text seperated by ,",
+    link = "direct link to image or gif"
 )
-async def creatememe(ctx: discord.Interaction, file: discord.Attachment, text: str):
+async def creatememe(ctx: discord.Interaction,
+                    text: str,
+                    file: Optional[discord.Attachment]=None,
+                    link: str = ""):
     await ctx.response.defer()
     try:
-        if (
-            file.content_type is not None
-            and file.content_type.startswith("image") == False
-        ):
-            await ctx.followup.send("file must be an image", ephemeral=True)
-            return
-        imagebytes = await memerequest(file.url, text)
-        view = EditView(file.url, file.filename)
+        if (file is None and link == "") or (file is not None and link != ""):
+            await ctx.followup.send("Must specify exactly one of file or link argument",ephemeral=True)
+        
+        if file is not None:
+            if file.content_type is None:
+                await ctx.followup.send("Unknown file type",ephemeral=True)
+        
+            if "image" not in file.content_type: # type: ignore
+                await ctx.followup.send("file must be a image",ephemeral=True)
+            url = file.url
+            filename = file.filename
+        else:
+            url = link
+            filename = link.split("/")[-1]
+
+        imagebytes = await memerequest(url, text)
+        view = EditView(url, filename)
         msg = await ctx.followup.send(
-            file=discord.File(fp=BytesIO(imagebytes), filename=file.filename),
+            file=discord.File(fp=BytesIO(imagebytes), filename=filename),
             view=view,
         )
         timeout = await view.wait()
