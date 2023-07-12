@@ -20,6 +20,18 @@ class DiscordInfo(commands.Cog):
             embed.set_image(url=banner.url)
             embed.set_author(name=user.name, icon_url=user.default_avatar.url)
             await ctx.response.send_message(embed=embed)
+    
+    @app_commands.command(name="info", description="Extra info about the bot")
+    async def info(self,ctx: discord.Interaction):
+        embed = discord.Embed(
+            title="MemeBot Info", description="This bot is managed by vision#5160"
+        )
+        embed.add_field(
+            name="💻 Source Code:",
+            value="[Click Here](https://github.com/mikytron123/MemeMaker-Discord-bot)",
+            inline=False,
+        )
+        await ctx.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(DiscordInfo(bot))

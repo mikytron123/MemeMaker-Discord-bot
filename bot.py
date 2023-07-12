@@ -1,12 +1,9 @@
 # bot.py
-import aiohttp
 import discord
-import random
 import uuid
 import requests
 import traceback
-from PIL import Image, ImageDraw, ImageFont, ImageSequence
-from apnggif import apnggif
+from PIL import Image, ImageDraw, ImageFont
 from bs4 import BeautifulSoup
 from discord import app_commands
 from discord.ext import commands
@@ -14,12 +11,13 @@ from fontTools.ttLib import TTFont
 from io import BytesIO
 from pathlib import Path
 import plotly.graph_objects as go
-from typing import List, Dict, Callable, Optional, Any
+from typing import List, Optional
+import glob
 
 from config import read_configs
 from dumpy import dumpy
-from utils import getimagedata,memerequest, seekrandomframe,parse_cli_args
-from views import RerollView, Scroller,EditView
+from utils import getimagedata,memerequest, parse_cli_args
+from views import Scroller,EditView
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -60,7 +58,8 @@ client = MyClient()
 async def on_ready():
     print(f"Logged in as {client.user} (ID: {client.user.id})")
     print("------")
-    await client.load_extension("discordinfo")
+    for file in glob.glob("cogs/*.py"):
+        await client.load_extension(file.replace("/",".")[:-3])
 
 
 @client.tree.context_menu(name="StickerInfo")
@@ -109,43 +108,6 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
         await ctx.response.send_message("Error creating pie chart")
 
 
-@client.tree.command(name="apng2gif", description="Convert apng file to gif")
-@app_commands.describe(file="apng file", link="direct url to apng file")
-async def apng2gif(
-    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
-):
-    await ctx.response.defer()
-    try:
-        imagedata = await getimagedata(file, link, "png", ".png")
-        error = imagedata.error
-
-        if error != "":
-            await ctx.followup.send(error, ephemeral=True)
-            return
-
-        imagebytes = imagedata.imagebytes
-        filename = imagedata.filename
-
-        with open(filename, "wb") as f:
-            f.write(imagebytes)
-        # convert to gif
-        apnggif(filename)
-
-        await ctx.followup.send(
-            file=discord.File(str(Path(filename).with_suffix(".gif")))
-        )
-        # remove temporary file
-        filepath = Path(filename)
-        filepath.unlink()
-        filepath = Path(filename).with_suffix(".gif")
-        filepath.unlink()
-
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        await ctx.followup.send("Error converting to gif", ephemeral=True)
-
-
 @client.tree.command(name="spongebob", description="Adds text to spongebob image")
 @app_commands.describe(
     text="Text to add to image",
@@ -184,96 +146,6 @@ async def spongebob(ctx: discord.Interaction, text: str):
         print(e)
         print(traceback.format_exc())
         await ctx.followup.send("Error adding text to image", ephemeral=True)
-
-
-@client.tree.command(name="giframe", description="Returns random frame from gif")
-@app_commands.describe(file="gif file", link="direct url link to gif")
-async def giframe(
-    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
-):
-    await ctx.response.defer()
-    try:
-        imagedata = await getimagedata(file, link, "gif", ".png")
-        error = imagedata.error
-
-        if error != "":
-            await ctx.followup.send(error, ephemeral=True)
-            return
-
-        imgbytes = imagedata.imagebytes
-        filename = imagedata.filename
-
-        image_binary = await seekrandomframe(imgbytes)
-        # send final image
-        view = RerollView(imgbytes,filename)
-
-
-        msg = await ctx.followup.send(
-                file=discord.File(fp=image_binary, filename=filename),
-                view=view
-        )
-        
-        timeout = await view.wait()
-        if timeout:
-            if isinstance(msg, discord.WebhookMessage):
-                await msg.edit(view=None)  # type: ignore
-            elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_response(view=None)  # type: ignore
-
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        await ctx.followup.send("Error generating random frame", ephemeral=True)
-
-
-@client.tree.command(name="reversegif", description="Reverses a gif")
-@app_commands.describe(file="gif file", link="direct url link to gif")
-async def reversegif(
-    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
-):
-    await ctx.response.defer()
-    try:
-        imagedata = await getimagedata(file, link, "gif", ".gif")
-        error = imagedata.error
-
-        if error != "":
-            await ctx.followup.send(error, ephemeral=True)
-            return
-
-        imgbytes = imagedata.imagebytes
-        filename = imagedata.filename
-
-        # read image from url
-        gif = Image.open(BytesIO(imgbytes))
-        frames: list = []
-
-        for frame in ImageSequence.Iterator(gif):
-            frames.append(frame.copy())
-
-        # Reverse the frames
-        frames.reverse()
-        frame_one = frames[0]
-
-        with BytesIO() as gif_binary:
-            frame_one.save(
-                gif_binary,
-                format="GIF",
-                append_images=frames,
-                save_all=True,
-                loop=0,
-                disposal=2,
-            )
-            gif_binary.seek(0)
-            await ctx.followup.send(
-                file=discord.File(
-                    fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
-                )
-            )
-
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        await ctx.followup.send("Error reversing gif", ephemeral=True)
 
 
 @client.tree.command(name="amogus", description="Creates amogus image")
@@ -468,19 +340,6 @@ async def kym(ctx: discord.Interaction, search: str):
         print(e)
         print(traceback.format_exc())
         await ctx.followup.send("Error searching kym", ephemeral=True)
-
-
-@client.tree.command(name="info", description="Extra info about the bot")
-async def info(ctx: discord.Interaction):
-    embed = discord.Embed(
-        title="MemeBot Info", description="This bot is managed by vision#5160"
-    )
-    embed.add_field(
-        name="💻 Source Code:",
-        value="[Click Here](https://github.com/mikytron123/MemeMaker-Discord-bot)",
-        inline=False,
-    )
-    await ctx.response.send_message(embed=embed)
 
 
 @client.tree.command(name="speechbubble", description="Add speechbubble to image")
