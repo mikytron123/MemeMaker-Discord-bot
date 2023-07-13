@@ -148,6 +148,37 @@ async def spongebob(ctx: discord.Interaction, text: str):
         await ctx.followup.send("Error adding text to image", ephemeral=True)
 
 
+@client.tree.command(name="sotrue", description="Creates a so true meme")
+@app_commands.describe(
+    file="image file to add to image",
+)
+async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
+    await ctx.response.defer()
+    try:
+        if file.content_type is None:
+            await ctx.followup.send("Unknown file type",ephemeral=True)
+        
+        if "image" not in file.content_type: # type: ignore
+            await ctx.followup.send("file must be a image",ephemeral=True)
+        
+        img = Image.open("images/sotrue.png")
+        image_bytes = requests.get(file.url).content
+        img2 = Image.open(BytesIO(image_bytes)).resize((img.size[0]//2-5,img.size[1]//2-5))
+        img.paste(img2,(img.size[0]//2+2,img.size[1]//2+2))
+
+        # send final image
+        with BytesIO() as image_binary:
+            img.save(image_binary, "PNG")
+            image_binary.seek(0)
+            await ctx.followup.send(
+                file=discord.File(fp=image_binary, filename=f"{str(uuid.uuid4())}.png")
+            )
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error adding text to image", ephemeral=True)
+
+
 @client.tree.command(name="amogus", description="Creates amogus image")
 @app_commands.describe(
     file="image file", link="direct url to image", lines="height of output image"
