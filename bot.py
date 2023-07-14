@@ -46,6 +46,8 @@ class MyClient(commands.Bot):
         super().__init__(intents=discord.Intents.default(),command_prefix="$")
 
     async def setup_hook(self):
+        for file in glob.glob("cogs/*.py"):
+            await client.load_extension(file.replace("/",".")[:-3])
         for MY_GUILD in MY_GUILDS:
             self.tree.copy_global_to(guild=MY_GUILD)
             await self.tree.sync(guild=MY_GUILD)
@@ -58,8 +60,6 @@ client = MyClient()
 async def on_ready():
     print(f"Logged in as {client.user} (ID: {client.user.id})")
     print("------")
-    for file in glob.glob("cogs/*.py"):
-        await client.load_extension(file.replace("/",".")[:-3])
 
 
 @client.tree.context_menu(name="StickerInfo")
