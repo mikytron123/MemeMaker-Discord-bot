@@ -3,7 +3,6 @@ import discord
 import requests
 from pathlib import Path
 from urllib.parse import urlparse
-from collections import namedtuple
 from typing import NamedTuple,Optional
 import os
 import aiohttp
@@ -29,7 +28,10 @@ class Imagedata(NamedTuple):
     filename: str
     error: str = ""  
 
-async def getimagedata(file:Optional[discord.Attachment],link:str,filetype:str,suffix:str) -> Imagedata:
+async def getimagedata(file:Optional[discord.Attachment],
+                       link:str,
+                       filetype:str,
+                       suffix:str) -> Imagedata:
     
     if (file is None and link == "") or (file is not None and link != ""):
         return Imagedata(b'',"","Must specify exactly one of file or link argument")
@@ -58,7 +60,7 @@ async def getimagedata(file:Optional[discord.Attachment],link:str,filetype:str,s
 
         response = requests.get(link)
         if response.status_code<200 or response.status_code>300:
-            return Imagedata(b'',"",f"Invalid url")
+            return Imagedata(b'',"","Invalid url")
         content_type = response.headers["Content-Type"]
     
         if filetype not in content_type:
@@ -71,7 +73,7 @@ async def getimagedata(file:Optional[discord.Attachment],link:str,filetype:str,s
 async def tenorsearch(url:str)->str:
     # set the apikey and limit
     apikey = os.getenv("TENOR_TOKEN")
-    ckey = "MemeBot"  # set the client_key for the integration and use the same value for all API calls
+    ckey = "MemeBot"
     id = url.split("-")[-1]
 
     r = requests.get(

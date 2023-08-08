@@ -6,7 +6,7 @@ import discord
 from discord import app_commands
 import traceback
 from apnggif import apnggif
-from PIL import Image, ImageDraw, ImageFont, ImageSequence
+from PIL import Image, ImageSequence
 
 from utils import getimagedata, seekrandomframe
 from views import RerollView
@@ -57,7 +57,9 @@ class GifCommands(commands.Cog):
     @app_commands.command(name="giframe", description="Returns random frame from gif")
     @app_commands.describe(file="gif file", link="direct url link to gif")
     async def giframe(self,
-        ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
+        ctx: discord.Interaction,
+        file: Optional[discord.Attachment] = None,
+        link: str = ""
     ):
         await ctx.response.defer()
         try:
@@ -96,7 +98,9 @@ class GifCommands(commands.Cog):
     @app_commands.command(name="reversegif", description="Reverses a gif")
     @app_commands.describe(file="gif file", link="direct url link to gif")
     async def reversegif(self,
-        ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
+        ctx: discord.Interaction,
+        file: Optional[discord.Attachment] = None,
+        link: str = ""
     ):
         await ctx.response.defer()
         try:

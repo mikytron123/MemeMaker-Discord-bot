@@ -1,28 +1,30 @@
 # bot.py
-import discord
-import uuid
-import requests
+import glob
 import traceback
-from PIL import Image, ImageDraw, ImageFont
+import uuid
+from io import BytesIO
+from pathlib import Path
+from typing import List, Optional
+
+import discord
+import nest_asyncio
+import plotly.graph_objects as go
+import requests
 from bs4 import BeautifulSoup
 from discord import app_commands
 from discord.ext import commands
+from dotenv import load_dotenv
 from fontTools.ttLib import TTFont
-from io import BytesIO
-from pathlib import Path
-import plotly.graph_objects as go
-from typing import List, Optional
-import glob
+from PIL import Image, ImageDraw, ImageFont
 
 from config import read_configs
 from dumpy import dumpy
-from utils import getimagedata,memerequest, parse_cli_args
-from views import Scroller,EditView
-from dotenv import load_dotenv
+from utils import getimagedata, memerequest, parse_cli_args
+from views import EditView, Scroller
 
 load_dotenv()
 
-import nest_asyncio
+
 
 nest_asyncio.apply()
 
@@ -163,7 +165,8 @@ async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
         
         img = Image.open("images/sotrue.png")
         image_bytes = requests.get(file.url).content
-        img2 = Image.open(BytesIO(image_bytes)).resize((img.size[0]//2-5,img.size[1]//2-5))
+        img2 = Image.open(BytesIO(image_bytes))
+        img2 = img2.resize((img.size[0]//2-5,img.size[1]//2-5))
         img.paste(img2,(img.size[0]//2+2,img.size[1]//2+2))
 
         # send final image
@@ -237,7 +240,8 @@ async def creatememe(ctx: discord.Interaction,
     await ctx.response.defer()
     try:
         if (file is None and link == "") or (file is not None and link != ""):
-            await ctx.followup.send("Must specify exactly one of file or link argument",ephemeral=True)
+            await ctx.followup.send("Must specify exactly one of file or link argument",
+                                    ephemeral=True)
         
         if file is not None:
             if file.content_type is None:
@@ -288,7 +292,7 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
 
         def embedfunc(response, count: int) -> discord.Embed:
             description = (
-                f"Use this template by providing the id in /creatememetemplate"
+                "Use this template by providing the id in /creatememetemplate"
             )
             embed = discord.Embed(
                 title=response[count]["name"], description=description
@@ -391,7 +395,8 @@ async def speechbubble(ctx: discord.Interaction,
         filename = imagedata.filename
         img = Image.open(BytesIO(imagebytes))
         
-        bubble = Image.open("images/speechbubble.png").resize((img.size[0], round(img.size[1] / 4)))
+        bubble = Image.open("images/speechbubble.png")
+        bubble = bubble.resize((img.size[0], round(img.size[1] / 4)))
         finalwidth = img.size[0]
         finalheight = img.size[1] + bubble.size[1]
 

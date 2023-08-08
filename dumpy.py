@@ -132,7 +132,7 @@ def shader(t, pRgb: Tuple[int, int, int]):
             int(entry[1] * shadeDefault),
             int(entry[2] * shadeDefault),
         ]
-    except Exception as iae:
+    except Exception:
         print("ERROR: " + str(shadeDefault) + ", " + str(factor))
 
     hsb = list(colorsys.rgb_to_hsv(shade[0], shade[1], shade[2]))
@@ -158,7 +158,10 @@ def shader(t, pRgb: Tuple[int, int, int]):
     return convertedImage
 
 
-def overlayImages(bgImage:Image.Image, fgImage:Image.Image, locateX: int, locateY: int)->Optional[Image.Image]:
+def overlayImages(bgImage:Image.Image,
+                  fgImage:Image.Image,
+                  locateX: int,
+                  locateY: int)->Optional[Image.Image]:
     if fgImage.height > bgImage.height or fgImage.width > fgImage.width:
         print(
             "Foreground Image Is Bigger In One or Both Dimensions"

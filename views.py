@@ -83,5 +83,6 @@ class RerollView(discord.ui.View):
     @discord.ui.button(style=discord.ButtonStyle.gray, label="Reroll")
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         image_binary = await seekrandomframe(self.imgbytes)
+        output_file = discord.File(fp=image_binary, filename=self.filename)
         await interaction.response.send_message(content=interaction.user.mention,
-                                                file=discord.File(fp=image_binary, filename=self.filename))
+                                                file=output_file)

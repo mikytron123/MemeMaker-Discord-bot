@@ -1,7 +1,6 @@
 from discord.ext import commands
 import discord
 from discord import app_commands
-import traceback
 
 class DiscordInfo(commands.Cog):
     def __init__(self, bot):

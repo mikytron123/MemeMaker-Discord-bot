@@ -9,7 +9,7 @@ class Configuration(NamedTuple):
 
 def read_configs(prod:bool) -> Configuration:
     conf = configparser.ConfigParser()
-    if prod==False:
+    if not prod:
         print("using dev config")
         configfile = "config-dev.ini"
     else:

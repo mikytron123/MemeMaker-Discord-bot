@@ -1,3 +1,5 @@
 .env
 *ttf
 __pycache__/*
+config.ini
+config-dev.ini
