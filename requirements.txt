@@ -6,8 +6,7 @@ discord.py
 numpy
 apnggif
 beautifulsoup4
-plotly
-kaleido
+matplotlib
 nest_asyncio
 python-dotenv
 

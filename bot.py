@@ -8,7 +8,7 @@ from typing import List, Optional
 
 import discord
 import nest_asyncio
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 import requests
 from bs4 import BeautifulSoup
 from discord import app_commands
@@ -94,14 +94,17 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
     try:
         labelslst = labels.split(",")
         valueslst = values.split(",")
-        fig = go.Figure(
-            data=[go.Pie(labels=labelslst, values=valueslst, textinfo="none")]
-        )
-        fig.update_layout(title={"text": title, "x": 0.5})
-        img_bytes = fig.to_image(format="png")
+        #write code for a pie chart using matplotlib
+        fig,ax = plt.subplots()
+        ax.pie(valueslst)
+        plt.title(title)
+        plt.legend(labels=labelslst,loc="best", bbox_to_anchor=(1,0.85))
+        filename = f"{title.replace(' ','_')}.png"
+        plt.savefig(filename,bbox_inches="tight")
+
         await ctx.response.send_message(
             file=discord.File(
-                fp=BytesIO(img_bytes), filename=f"{str(uuid.uuid4())}.png"
+                fp=filename, filename=filename
             )
         )
     except Exception as e:
