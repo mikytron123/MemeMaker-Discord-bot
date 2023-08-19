@@ -403,7 +403,7 @@ async def speechbubble(ctx: discord.Interaction,
         finalwidth = img.size[0]
         finalheight = img.size[1] + bubble.size[1]
 
-        newimg = Image.new("RGB", (finalwidth, finalheight))
+        newimg = Image.new("RGBA", (finalwidth, finalheight),(255, 255, 255, 0))
         newimg.paste(bubble, (0, 0))
         newimg.paste(img, (0, bubble.size[1]))
 
@@ -421,6 +421,41 @@ async def speechbubble(ctx: discord.Interaction,
         print(e)
         print(traceback.format_exc())
         await ctx.followup.send("Error adding speechbubble to image", ephemeral=True)
+
+# @client.tree.command(name="grid", description="Create grid of images")
+# @app_commands.describe(image1="image file")
+# async def grid(ctx: discord.Interaction,
+#                        title:str,
+#                        image1:discord.Attachment,
+#                        image2: Optional[discord.Attachment]=None,
+#                        image3: Optional[discord.Attachment]=None,
+#                        image4: Optional[discord.Attachment]=None,
+#                        image5: Optional[discord.Attachment]=None,
+#                        image6: Optional[discord.Attachment]=None,
+#                        image7: Optional[discord.Attachment]=None,
+#                        image8: Optional[discord.Attachment]=None,
+#                        image9: Optional[discord.Attachment]=None,
+#                        ):
+#     imagelst = [image1,image2,image3,image4,image5,image6,image7,image8,image9]
+#     imagelst = [x for x in imagelst if x is not None]
+#     img_width = 300
+#     img_height = 300
+#     await ctx.response.defer()
+#     try:
+#         rows = round(len(imagelst)**(1/2))
+#         if rows**2 < len(imagelst):
+#             cols = rows + 1
+#         else:
+#             cols = rows
+#         final_width = img_width*cols
+#         final_height = img_height*rows + 50
+#         newimg = Image.new("RGBA", (final_width, final_height),color="white")
+#     except: 
+#         pass
+        
+        
+        
+
 
 if __name__ == "__main__":
     
