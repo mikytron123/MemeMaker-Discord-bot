@@ -102,7 +102,7 @@ async def memerequest(background: str, text: str) -> bytes:
             imagebytes = await resp.read()
             return imagebytes
 
-async def seekrandomframe(imgbytes:bytes)->BytesIO:
+def seekrandomframe(imgbytes:bytes)->BytesIO:
     gif = Image.open(BytesIO(imgbytes))
     num_frames = gif.n_frames
     # select random frame
@@ -113,3 +113,7 @@ async def seekrandomframe(imgbytes:bytes)->BytesIO:
     gif.save(image_binary, "PNG")
     image_binary.seek(0)
     return image_binary
+
+def clean_str(filename:str)->str:
+    filename = filename.replace(" ","_")
+    return ''.join(filter(str.isalnum, filename)) 

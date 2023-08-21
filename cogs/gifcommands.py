@@ -79,7 +79,8 @@ class GifCommands(commands.Cog):
 
 
             msg = await ctx.followup.send(
-                    file=discord.File(fp=image_binary, filename=filename),
+                    file=discord.File(fp=image_binary,
+                                       filename=filename),
                     view=view
             )
             
@@ -137,7 +138,8 @@ class GifCommands(commands.Cog):
                 gif_binary.seek(0)
                 await ctx.followup.send(
                     file=discord.File(
-                        fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
+                        fp=gif_binary,
+                          filename=str(Path(filename).with_suffix(".gif"))
                     )
                 )
 
