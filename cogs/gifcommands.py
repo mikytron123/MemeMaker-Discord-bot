@@ -73,7 +73,7 @@ class GifCommands(commands.Cog):
             imgbytes = imagedata.imagebytes
             filename = imagedata.filename
 
-            image_binary = await seekrandomframe(imgbytes)
+            image_binary = seekrandomframe(imgbytes)
             # send final image
             view = RerollView(imgbytes,filename)
 
