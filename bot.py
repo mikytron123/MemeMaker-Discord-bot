@@ -1,7 +1,6 @@
 # bot.py
 import glob
 import traceback
-import uuid
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional
