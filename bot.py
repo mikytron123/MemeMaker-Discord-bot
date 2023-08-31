@@ -24,7 +24,6 @@ from views import EditView, Scroller
 load_dotenv()
 
 
-
 nest_asyncio.apply()
 
 
@@ -44,18 +43,18 @@ def has_glyph(font, glyph):
 
 class MyClient(commands.Bot):
     def __init__(self):
-        super().__init__(intents=discord.Intents.default(),command_prefix="$")
+        super().__init__(intents=discord.Intents.default(), command_prefix="$")
 
     async def setup_hook(self):
         for file in glob.glob("cogs/*.py"):
-            await client.load_extension(file.replace("/",".")[:-3])
+            await client.load_extension(file.replace("/", ".")[:-3])
         for MY_GUILD in MY_GUILDS:
             self.tree.copy_global_to(guild=MY_GUILD)
             await self.tree.sync(guild=MY_GUILD)
-    
 
 
 client = MyClient()
+
 
 @client.event
 async def on_ready():
@@ -93,23 +92,19 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
     try:
         labelslst = labels.split(",")
         valueslst = values.split(",")
-        #write code for a pie chart using matplotlib
-        fig,ax = plt.subplots()
+        # write code for a pie chart using matplotlib
+        fig, ax = plt.subplots()
         ax.pie(valueslst)
         plt.title(title)
-        plt.legend(labels=labelslst,loc="best", bbox_to_anchor=(1,0.85))
+        plt.legend(labels=labelslst, loc="best", bbox_to_anchor=(1, 0.85))
         filename = f"{clean_str(title)}.png"
-        plt.savefig(filename,bbox_inches="tight")
+        plt.savefig(filename, bbox_inches="tight")
 
         await ctx.response.send_message(
-            file=discord.File(
-                fp=filename,
-                filename=filename
-            )
+            file=discord.File(fp=filename, filename=filename)
         )
         filepath = Path(filename)
         filepath.unlink()
-
 
     except Exception as e:
         print(e)
@@ -149,8 +144,7 @@ async def spongebob(ctx: discord.Interaction, text: str):
             img.save(image_binary, "PNG")
             image_binary.seek(0)
             await ctx.followup.send(
-                file=discord.File(fp=image_binary,
-                                   filename="image.png")
+                file=discord.File(fp=image_binary, filename="image.png")
             )
     except Exception as e:
         print(e)
@@ -166,24 +160,23 @@ async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
     await ctx.response.defer()
     try:
         if file.content_type is None:
-            await ctx.followup.send("Unknown file type",ephemeral=True)
-        
-        if "image" not in file.content_type: # type: ignore
-            await ctx.followup.send("file must be a image",ephemeral=True)
-        
+            await ctx.followup.send("Unknown file type", ephemeral=True)
+
+        if "image" not in file.content_type:  # type: ignore
+            await ctx.followup.send("file must be a image", ephemeral=True)
+
         img = Image.open("images/sotrue.png")
         image_bytes = requests.get(file.url).content
         img2 = Image.open(BytesIO(image_bytes))
-        img2 = img2.resize((img.size[0]//2-5,img.size[1]//2-5))
-        img.paste(img2,(img.size[0]//2+2,img.size[1]//2+2))
+        img2 = img2.resize((img.size[0] // 2 - 5, img.size[1] // 2 - 5))
+        img.paste(img2, (img.size[0] // 2 + 2, img.size[1] // 2 + 2))
 
         # send final image
         with BytesIO() as image_binary:
             img.save(image_binary, "PNG")
             image_binary.seek(0)
             await ctx.followup.send(
-                file=discord.File(fp=image_binary,
-                                   filename=f"{file.filename}.png")
+                file=discord.File(fp=image_binary, filename=f"{file.filename}.png")
             )
     except Exception as e:
         print(e)
@@ -227,8 +220,7 @@ async def amogus(
             gif_binary.seek(0)
             await ctx.followup.send(
                 file=discord.File(
-                    fp=gif_binary,
-                      filename=str(Path(filename).with_suffix(".gif"))
+                    fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
                 )
             )
     except Exception as e:
@@ -239,26 +231,29 @@ async def amogus(
 
 @client.tree.command(name="creatememe", description="Create meme from an image")
 @app_commands.describe(
-    file = "image or gif file",
-    text = "top and bottom text seperated by ,",
-    link = "direct link to image or gif"
+    file="image or gif file",
+    text="top and bottom text seperated by ,",
+    link="direct link to image or gif",
 )
-async def creatememe(ctx: discord.Interaction,
-                    text: str,
-                    file: Optional[discord.Attachment]=None,
-                    link: str = ""):
+async def creatememe(
+    ctx: discord.Interaction,
+    text: str,
+    file: Optional[discord.Attachment] = None,
+    link: str = "",
+):
     await ctx.response.defer()
     try:
         if (file is None and link == "") or (file is not None and link != ""):
-            await ctx.followup.send("Must specify exactly one of file or link argument",
-                                    ephemeral=True)
-        
+            await ctx.followup.send(
+                "Must specify exactly one of file or link argument", ephemeral=True
+            )
+
         if file is not None:
             if file.content_type is None:
-                await ctx.followup.send("Unknown file type",ephemeral=True)
-        
-            if "image" not in file.content_type: # type: ignore
-                await ctx.followup.send("file must be a image",ephemeral=True)
+                await ctx.followup.send("Unknown file type", ephemeral=True)
+
+            if "image" not in file.content_type:  # type: ignore
+                await ctx.followup.send("file must be a image", ephemeral=True)
             url = file.url
             filename = file.filename
         else:
@@ -268,8 +263,7 @@ async def creatememe(ctx: discord.Interaction,
         imagebytes = await memerequest(url, text)
         view = EditView(url, filename)
         msg = await ctx.followup.send(
-            file=discord.File(fp=BytesIO(imagebytes),
-                               filename=filename),
+            file=discord.File(fp=BytesIO(imagebytes), filename=filename),
             view=view,
         )
         timeout = await view.wait()
@@ -283,7 +277,6 @@ async def creatememe(ctx: discord.Interaction,
         print(e)
         print(traceback.format_exc())
         await ctx.followup.send("Error creating meme", ephemeral=True)
-
 
 
 @client.tree.command(name="memetemplates", description="List image templates")
@@ -302,9 +295,7 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
             return
 
         def embedfunc(response, count: int) -> discord.Embed:
-            description = (
-                "Use this template by providing the id in /creatememetemplate"
-            )
+            description = "Use this template by providing the id in /creatememetemplate"
             embed = discord.Embed(
                 title=response[count]["name"], description=description
             )
@@ -371,7 +362,7 @@ async def kym(ctx: discord.Interaction, search: str):
         if len(alllinks) == 0:
             await ctx.followup.send("No results found", ephemeral=True)
             return
-        
+
         view = Scroller(alllinks)
         msg = await ctx.followup.send(content=alllinks[0], view=view)
         timeout = await view.wait()
@@ -389,10 +380,10 @@ async def kym(ctx: discord.Interaction, search: str):
 
 
 @client.tree.command(name="speechbubble", description="Add speechbubble to image")
-@app_commands.describe(file="image file",link="direct link to image")
-async def speechbubble(ctx: discord.Interaction,
-                       file: Optional[discord.Attachment]=None,
-                       link:str=""):
+@app_commands.describe(file="image file", link="direct link to image")
+async def speechbubble(
+    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
+):
     await ctx.response.defer()
     try:
         imagedata = await getimagedata(file, link, "image", ".png")
@@ -405,13 +396,13 @@ async def speechbubble(ctx: discord.Interaction,
         imagebytes = imagedata.imagebytes
         filename = imagedata.filename
         img = Image.open(BytesIO(imagebytes))
-        
+
         bubble = Image.open("images/speechbubble.png")
         bubble = bubble.resize((img.size[0], round(img.size[1] / 4)))
         finalwidth = img.size[0]
         finalheight = img.size[1] + bubble.size[1]
 
-        newimg = Image.new("RGBA", (finalwidth, finalheight),(255, 255, 255, 0))
+        newimg = Image.new("RGBA", (finalwidth, finalheight), (255, 255, 255, 0))
         newimg.paste(bubble, (0, 0))
         newimg.paste(img, (0, bubble.size[1]))
 
@@ -430,54 +421,65 @@ async def speechbubble(ctx: discord.Interaction,
         print(traceback.format_exc())
         await ctx.followup.send("Error adding speechbubble to image", ephemeral=True)
 
+
 @client.tree.command(name="grid", description="Create grid of images")
-@app_commands.describe(title="title of image",image1="image file")
-async def grid(ctx: discord.Interaction,
-                       title:str,
-                       image1:discord.Attachment,
-                       image2: Optional[discord.Attachment]=None,
-                       image3: Optional[discord.Attachment]=None,
-                       image4: Optional[discord.Attachment]=None,
-                       image5: Optional[discord.Attachment]=None,
-                       image6: Optional[discord.Attachment]=None,
-                       image7: Optional[discord.Attachment]=None,
-                       image8: Optional[discord.Attachment]=None,
-                       image9: Optional[discord.Attachment]=None,
-                       ):
-        
+@app_commands.describe(title="title of image", image1="image file")
+async def grid(
+    ctx: discord.Interaction,
+    title: str,
+    image1: discord.Attachment,
+    image2: Optional[discord.Attachment] = None,
+    image3: Optional[discord.Attachment] = None,
+    image4: Optional[discord.Attachment] = None,
+    image5: Optional[discord.Attachment] = None,
+    image6: Optional[discord.Attachment] = None,
+    image7: Optional[discord.Attachment] = None,
+    image8: Optional[discord.Attachment] = None,
+    image9: Optional[discord.Attachment] = None,
+):
     await ctx.response.defer()
     try:
         img_width = 300
         img_height = 300
         FONT_SIZE = 30
-        
-        imagelst = [image1,image2,image3,image4,image5,image6,image7,image8,image9]
+
+        imagelst = [
+            image1,
+            image2,
+            image3,
+            image4,
+            image5,
+            image6,
+            image7,
+            image8,
+            image9,
+        ]
         imagelst = [x for x in imagelst if x is not None]
         font = ImageFont.truetype("uni.ttf", FONT_SIZE, encoding="unic")
-    
-        rows = round(len(imagelst)**(1/2))
+
+        rows = round(len(imagelst) ** (1 / 2))
         if rows**2 < len(imagelst):
             cols = rows + 1
         else:
             cols = rows
 
-        final_width = img_width*cols
-        final_height = img_height*rows + 50
-        
-        newimg = Image.new("RGB", (final_width, final_height),color="white")
+        final_width = img_width * cols
+        final_height = img_height * rows + 50
+
+        newimg = Image.new("RGB", (final_width, final_height), color="white")
         draw = ImageDraw.Draw(newimg)
         font = ImageFont.truetype("uni.ttf", FONT_SIZE, encoding="unic")
-        
-        draw.text((5,5), title, font=font, fill=(0,0,0))
-        
-        for ii,img in enumerate(imagelst):
+
+        draw.text((5, 5), title, font=font, fill=(0, 0, 0))
+
+        for ii, img in enumerate(imagelst):
             grid_img = Image.open(BytesIO(requests.get(img.url).content))
-            grid_img =grid_img.resize((img_width,img_height))
-            num = str(ii+1)
-            corner = (ii%cols)*img_width,(ii//cols)*img_height+50
+            grid_img = grid_img.resize((img_width, img_height))
+            num = str(ii + 1)
+            corner = (ii % cols) * img_width, (ii // cols) * img_height + 50
             grid_img_draw = ImageDraw.Draw(grid_img)
-            grid_img_draw.text((5,5),num,font=font,embedded_color=True)
-            newimg.paste(grid_img,corner)
+            grid_img_draw.text((5, 5), num, font=font, embedded_color=True)
+            newimg.paste(grid_img, corner)
 
         filename = str(Path(clean_str(title)).with_suffix(".png"))
         with BytesIO() as image_binary:
@@ -490,13 +492,11 @@ async def grid(ctx: discord.Interaction,
                 )
             )
 
-    except Exception as e: 
+    except Exception as e:
         print(e)
         print(traceback.format_exc())
         await ctx.followup.send("Error making grid image", ephemeral=True)
-        
-        
-if __name__ == "__main__":
-    
-    client.run(TOKEN)
 
+
+if __name__ == "__main__":
+    client.run(TOKEN)

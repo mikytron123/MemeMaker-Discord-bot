@@ -1,12 +1,12 @@
 import colorsys
 import io
-from typing import Tuple,Optional
+from typing import Tuple, Optional
 
 import numpy as np
 from PIL import Image
 
 
-def dumpy(imagebytes: bytes,ty:int)->list[Image.Image]:
+def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
     background: str = "dumpy/black.png"
 
     backgroundimg = Image.open(background).convert("RGB")
@@ -34,7 +34,7 @@ def dumpy(imagebytes: bytes,ty:int)->list[Image.Image]:
     iy = (ty * sourceY) + (pad * 2)
 
     # Actually makes the frames
-    frames:list[Image.Image] = []
+    frames: list[Image.Image] = []
 
     # these constants are now variables.
     fac = 1.00
@@ -81,7 +81,6 @@ def dumpy(imagebytes: bytes,ty:int)->list[Image.Image]:
         # iterates through pixels
         for y in range(0, F_ty):
             for x in range(0, F_tx):
-
                 # Grabs appropriate pixel frame
                 pixel = moguses[count]  # No more constant reading!
                 pixelinputimg = inputimage.load()
@@ -93,7 +92,6 @@ def dumpy(imagebytes: bytes,ty:int)->list[Image.Image]:
                     )
                     if overlaid_image is not None:
                         frames[indexx] = overlaid_image
-
 
                 # Handles animating
                 count += 1
@@ -158,10 +156,9 @@ def shader(t, pRgb: Tuple[int, int, int]):
     return convertedImage
 
 
-def overlayImages(bgImage:Image.Image,
-                  fgImage:Image.Image,
-                  locateX: int,
-                  locateY: int)->Optional[Image.Image]:
+def overlayImages(
+    bgImage: Image.Image, fgImage: Image.Image, locateX: int, locateY: int
+) -> Optional[Image.Image]:
     if fgImage.height > bgImage.height or fgImage.width > fgImage.width:
         print(
             "Foreground Image Is Bigger In One or Both Dimensions"

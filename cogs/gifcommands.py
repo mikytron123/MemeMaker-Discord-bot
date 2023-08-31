@@ -11,6 +11,7 @@ from PIL import Image, ImageSequence
 from utils import getimagedata, seekrandomframe
 from views import RerollView
 
+
 class GifCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -21,7 +22,7 @@ class GifCommands(commands.Cog):
         self,
         ctx: discord.Interaction,
         file: Optional[discord.Attachment] = None,
-        link: str = ""
+        link: str = "",
     ):
         await ctx.response.defer()
         try:
@@ -56,10 +57,11 @@ class GifCommands(commands.Cog):
 
     @app_commands.command(name="giframe", description="Returns random frame from gif")
     @app_commands.describe(file="gif file", link="direct url link to gif")
-    async def giframe(self,
+    async def giframe(
+        self,
         ctx: discord.Interaction,
         file: Optional[discord.Attachment] = None,
-        link: str = ""
+        link: str = "",
     ):
         await ctx.response.defer()
         try:
@@ -75,15 +77,12 @@ class GifCommands(commands.Cog):
 
             image_binary = seekrandomframe(imgbytes)
             # send final image
-            view = RerollView(imgbytes,filename)
-
+            view = RerollView(imgbytes, filename)
 
             msg = await ctx.followup.send(
-                    file=discord.File(fp=image_binary,
-                                       filename=filename),
-                    view=view
+                file=discord.File(fp=image_binary, filename=filename), view=view
             )
-            
+
             timeout = await view.wait()
             if timeout:
                 if isinstance(msg, discord.WebhookMessage):
@@ -98,10 +97,11 @@ class GifCommands(commands.Cog):
 
     @app_commands.command(name="reversegif", description="Reverses a gif")
     @app_commands.describe(file="gif file", link="direct url link to gif")
-    async def reversegif(self,
+    async def reversegif(
+        self,
         ctx: discord.Interaction,
         file: Optional[discord.Attachment] = None,
-        link: str = ""
+        link: str = "",
     ):
         await ctx.response.defer()
         try:
@@ -138,8 +138,7 @@ class GifCommands(commands.Cog):
                 gif_binary.seek(0)
                 await ctx.followup.send(
                     file=discord.File(
-                        fp=gif_binary,
-                          filename=str(Path(filename).with_suffix(".gif"))
+                        fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
                     )
                 )
 
@@ -147,6 +146,7 @@ class GifCommands(commands.Cog):
             print(e)
             print(traceback.format_exc())
             await ctx.followup.send("Error reversing gif", ephemeral=True)
+
 
 async def setup(bot):
     await bot.add_cog(GifCommands(bot))

@@ -1,8 +1,9 @@
 import discord
-from typing import Optional,Any,Callable
+from typing import Optional, Any, Callable
 import traceback
 from io import BytesIO
 from utils import memerequest, seekrandomframe
+
 
 class Scroller(discord.ui.View):
     def __init__(
@@ -32,6 +33,7 @@ class Scroller(discord.ui.View):
             await interaction.response.edit_message(embed=embed)
             return
         await interaction.response.edit_message(content=self.responselst[self.count])
+
 
 class Form(discord.ui.Modal, title="Form"):
     def __init__(self, url: str, filename) -> None:
@@ -64,6 +66,7 @@ class Form(discord.ui.Modal, title="Form"):
         # Make sure we know what the error actually is
         traceback.print_exception(type(error), error)
 
+
 class EditView(discord.ui.View):
     def __init__(self, url: str, filename: str) -> None:
         super().__init__(timeout=60)
@@ -74,8 +77,9 @@ class EditView(discord.ui.View):
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(Form(self.background, self.filename))
 
+
 class RerollView(discord.ui.View):
-    def __init__(self, imgbytes:bytes, filename: str) -> None:
+    def __init__(self, imgbytes: bytes, filename: str) -> None:
         super().__init__(timeout=60)
         self.imgbytes = imgbytes
         self.filename = filename
@@ -84,5 +88,6 @@ class RerollView(discord.ui.View):
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         image_binary = seekrandomframe(self.imgbytes)
         output_file = discord.File(fp=image_binary, filename=self.filename)
-        await interaction.response.send_message(content=interaction.user.mention,
-                                                file=output_file)
+        await interaction.response.send_message(
+            content=interaction.user.mention, file=output_file
+        )
