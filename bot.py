@@ -4,6 +4,7 @@ import traceback
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import urlparse
 
 import discord
 import nest_asyncio
@@ -18,14 +19,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 from config import read_configs
 from dumpy import dumpy
-from utils import clean_str, getimagedata, memerequest, parse_cli_args
+from utils import clean_str, getimagedata, memerequest, parse_cli_args, tenorsearch
 from views import EditView, Scroller
 
 load_dotenv()
 
-
 nest_asyncio.apply()
-
 
 args = parse_cli_args()
 
@@ -258,7 +257,20 @@ async def creatememe(
             filename = file.filename
         else:
             url = link
-            filename = link.split("/")[-1]
+            filename = urlparse(link).path.split("/")[-1]
+            url_request = requests.head(url)
+
+            if url_request.status_code == 200:
+                if "tenor.com" in url:
+                    url = await tenorsearch(url)
+                    filename = urlparse(url).path.split("/")[-1]
+                else:
+                    content_type = url_request.headers["Content-Type"]
+
+                    if "image" not in content_type:
+                        await ctx.followup.send("file must be a image", ephemeral=True)
+            else:
+                await ctx.followup.send("Invalid link", ephemereal=True)
 
         imagebytes = await memerequest(url, text)
         view = EditView(url, filename)
@@ -344,7 +356,7 @@ async def creatememetemplate(ctx: discord.Interaction, id: str, text: str):
 async def kym(ctx: discord.Interaction, search: str):
     await ctx.response.defer()
     try:
-        url = f'https://knowyourmeme.com/search?q={search.replace(" ","+")}'
+        url = f'https://knowyourmeme.com/search?q={search.replace(" ", "+")}'
         header = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
         }
