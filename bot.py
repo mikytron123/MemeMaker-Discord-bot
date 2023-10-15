@@ -111,11 +111,11 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
         await ctx.response.send_message("Error creating pie chart")
 
 
-@client.tree.command(name="spongebob", description="Adds text to spongebob image")
+@client.tree.command(name="spongebobmeme", description="Adds text to spongebob image")
 @app_commands.describe(
     text="Text to add to image",
 )
-async def spongebob(ctx: discord.Interaction, text: str):
+async def spongebobmeme(ctx: discord.Interaction, text: str):
     await ctx.response.defer()
     try:
         addstr = str(text)
