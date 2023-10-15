@@ -5,7 +5,6 @@ from io import BytesIO
 from pathlib import Path
 from typing import List, Optional
 from urllib.parse import urlparse
-
 import discord
 import nest_asyncio
 import matplotlib.pyplot as plt
@@ -17,9 +16,10 @@ from dotenv import load_dotenv
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageDraw, ImageFont
 
-from config import read_configs
+from config import read_configs, parse_cli_args
+from decorators import log_arguments, timer_function
 from dumpy import dumpy
-from utils import clean_str, getimagedata, memerequest, parse_cli_args, tenorsearch
+from utils import clean_str, getimagedata, memerequest, tenorsearch
 from views import EditView, Scroller
 
 load_dotenv()
@@ -62,6 +62,8 @@ async def on_ready():
 
 
 @client.tree.context_menu(name="StickerInfo")
+@log_arguments
+@timer_function
 async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
     try:
         if len(message.stickers) == 0:
@@ -87,6 +89,8 @@ async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
     values="chart values seperated by ,",
     title="title of chart",
 )
+@log_arguments
+@timer_function
 async def piechart(ctx: discord.Interaction, labels: str, values: str, title: str):
     try:
         labelslst = labels.split(",")
@@ -115,6 +119,8 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
 @app_commands.describe(
     text="Text to add to image",
 )
+@log_arguments
+@timer_function
 async def spongebobmeme(ctx: discord.Interaction, text: str):
     await ctx.response.defer()
     try:
@@ -155,6 +161,8 @@ async def spongebobmeme(ctx: discord.Interaction, text: str):
 @app_commands.describe(
     file="image file to add to image",
 )
+@log_arguments
+@timer_function
 async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
     await ctx.response.defer()
     try:
@@ -187,6 +195,8 @@ async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
 @app_commands.describe(
     file="image file", link="direct url to image", lines="height of output image"
 )
+@log_arguments
+@timer_function
 async def amogus(
     ctx: discord.Interaction,
     file: Optional[discord.Attachment] = None,
@@ -234,6 +244,8 @@ async def amogus(
     text="top and bottom text seperated by ,",
     link="direct link to image or gif",
 )
+@log_arguments
+@timer_function
 async def creatememe(
     ctx: discord.Interaction,
     text: str,
@@ -268,14 +280,14 @@ async def creatememe(
                             "couldnt find gif on tenor", ephemeral=True
                         )
 
-                    filename = urlparse(url).path.split("/")[-1]
+                    filename: str = urlparse(url).path.split("/")[-1]  # type: ignore
                 else:
                     content_type = url_request.headers["Content-Type"]
 
                     if "image" not in content_type:
                         await ctx.followup.send("file must be a image", ephemeral=True)
             else:
-                await ctx.followup.send("Invalid link", ephemereal=True)
+                await ctx.followup.send("Invalid link", ephemereal=True)  # type: ignore
 
         imagebytes = await memerequest(url, text)
         view = EditView(url, filename)
@@ -298,6 +310,8 @@ async def creatememe(
 
 @client.tree.command(name="memetemplates", description="List image templates")
 @app_commands.describe(search="filter meme templates")
+@log_arguments
+@timer_function
 async def memetemplates(ctx: discord.Interaction, search: str = ""):
     await ctx.response.defer()
     try:
@@ -340,6 +354,8 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
     name="creatememetemplate", description="Creates a meme from a template id"
 )
 @app_commands.describe(id="id of template", text="top and bottom text seperated by ,")
+@log_arguments
+@timer_function
 async def creatememetemplate(ctx: discord.Interaction, id: str, text: str):
     await ctx.response.defer()
     try:
@@ -358,6 +374,8 @@ async def creatememetemplate(ctx: discord.Interaction, id: str, text: str):
     name="knowyourmeme", description="Searches know your meme for submission"
 )
 @app_commands.describe(search="name of meme")
+@log_arguments
+@timer_function
 async def kym(ctx: discord.Interaction, search: str):
     await ctx.response.defer()
     try:
@@ -398,6 +416,8 @@ async def kym(ctx: discord.Interaction, search: str):
 
 @client.tree.command(name="speechbubble", description="Add speechbubble to image")
 @app_commands.describe(file="image file", link="direct link to image")
+@log_arguments
+@timer_function
 async def speechbubble(
     ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
 ):
@@ -441,6 +461,8 @@ async def speechbubble(
 
 @client.tree.command(name="grid", description="Create grid of images")
 @app_commands.describe(title="title of image", image1="image file")
+@log_arguments
+@timer_function
 async def grid(
     ctx: discord.Interaction,
     title: str,

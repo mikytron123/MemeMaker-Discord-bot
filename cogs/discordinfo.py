@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 from discord import app_commands
+from decorators import timer_function, log_arguments
 
 
 class DiscordInfo(commands.Cog):
@@ -9,6 +10,8 @@ class DiscordInfo(commands.Cog):
 
     @app_commands.command(name="banner", description="Get user banner")
     @app_commands.describe(user="server member")
+    @log_arguments
+    @timer_function
     async def banner(self, ctx: discord.Interaction, user: discord.Member):
         banner = (await ctx.client.fetch_user(user.id)).banner
         if banner is None:
@@ -22,9 +25,11 @@ class DiscordInfo(commands.Cog):
             await ctx.response.send_message(embed=embed)
 
     @app_commands.command(name="info", description="Extra info about the bot")
+    @log_arguments
+    @timer_function
     async def info(self, ctx: discord.Interaction):
         embed = discord.Embed(
-            title="MemeBot Info", description="This bot is managed by vision#5160"
+            title="MemeBot Info", description="This bot is managed by visssion"
         )
         embed.add_field(
             name="💻 Source Code:",

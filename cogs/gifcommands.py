@@ -8,6 +8,8 @@ import traceback
 from apnggif import apnggif
 from PIL import Image, ImageSequence
 
+from decorators import timer_function, log_arguments
+
 from utils import getimagedata, seekrandomframe
 from views import RerollView
 
@@ -18,6 +20,8 @@ class GifCommands(commands.Cog):
 
     @app_commands.command(name="apng2gif", description="Convert apng file to gif")
     @app_commands.describe(file="apng file", link="direct url to apng file")
+    @log_arguments
+    @timer_function
     async def apng2gif(
         self,
         ctx: discord.Interaction,
@@ -57,6 +61,8 @@ class GifCommands(commands.Cog):
 
     @app_commands.command(name="giframe", description="Returns random frame from gif")
     @app_commands.describe(file="gif file", link="direct url link to gif")
+    @log_arguments
+    @timer_function
     async def giframe(
         self,
         ctx: discord.Interaction,
@@ -97,6 +103,8 @@ class GifCommands(commands.Cog):
 
     @app_commands.command(name="reversegif", description="Reverses a gif")
     @app_commands.describe(file="gif file", link="direct url link to gif")
+    @log_arguments
+    @timer_function
     async def reversegif(
         self,
         ctx: discord.Interaction,

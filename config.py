@@ -1,3 +1,4 @@
+import argparse
 import configparser
 import ast
 from typing import List, NamedTuple
@@ -22,3 +23,10 @@ def read_configs(prod: bool) -> Configuration:
     guild_list: List[int] = ast.literal_eval(conf["DISCORD"]["guilds"])
     MY_GUILDS = [discord.Object(id=guild) for guild in guild_list]
     return Configuration(token=TOKEN, guilds=MY_GUILDS)
+
+
+def parse_cli_args():
+    parser = argparse.ArgumentParser(prog="MemeBot", description="Discord Bot")
+    parser.add_argument("--prod", action="store_true", default=False)
+
+    return parser.parse_args()

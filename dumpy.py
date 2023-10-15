@@ -66,7 +66,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
         F_tx = tx
         F_count1Check = count1Check
         F_count2Reset = count2Reset
-        ixF = ix 
+        ixF = ix
         iyF = iy
         moxF = mox
         moyF = moy
@@ -81,7 +81,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
         for y in range(0, F_ty):
             for x in range(0, F_tx):
                 # Grabs appropriate pixel frame
-                pixel = moguses[count] 
+                pixel = moguses[count]
                 pixelinputimg = inputimage.load()
                 pixel = shader(pixel, pixelinputimg[x, y])
                 # overlays it (if not null)
@@ -105,7 +105,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
     return frames
 
 
-def shader(t:Image.Image, pRgb: Tuple[int, int, int]):
+def shader(t: Image.Image, pRgb: Tuple[int, int, int]):
     c = (197, 17, 17)
     c2 = (122, 8, 56)
     entry = pRgb
