@@ -263,6 +263,11 @@ async def creatememe(
             if url_request.status_code == 200:
                 if "tenor.com" in url:
                     url = await tenorsearch(url)
+                    if url is None:
+                        await ctx.followup.send(
+                            "couldnt find gif on tenor", ephemeral=True
+                        )
+
                     filename = urlparse(url).path.split("/")[-1]
                 else:
                     content_type = url_request.headers["Content-Type"]

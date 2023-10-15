@@ -26,7 +26,6 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
     count2Reset = 5
     sourceX = 74
     sourceY = 63
-    modestring = ""
 
     # Sets up BG
     pad = 10
@@ -40,9 +39,9 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
     fac = 1.00
     mox = 74
     moy = 63
-    moguses = []
+    moguses: list[Image.Image] = []
     for it in range(0, bufferedImageArraySize):
-        temp = f"dumpy/{it}{modestring}.png"
+        temp = f"dumpy/{it}.png"
         moguses.append(Image.open(temp).convert("RGB"))
 
     if ix > 1000 or iy > 1000:
@@ -67,7 +66,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
         F_tx = tx
         F_count1Check = count1Check
         F_count2Reset = count2Reset
-        ixF = ix  # // new series of "modified" variables
+        ixF = ix 
         iyF = iy
         moxF = mox
         moyF = moy
@@ -82,7 +81,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
         for y in range(0, F_ty):
             for x in range(0, F_tx):
                 # Grabs appropriate pixel frame
-                pixel = moguses[count]  # No more constant reading!
+                pixel = moguses[count] 
                 pixelinputimg = inputimage.load()
                 pixel = shader(pixel, pixelinputimg[x, y])
                 # overlays it (if not null)
@@ -106,7 +105,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
     return frames
 
 
-def shader(t, pRgb: Tuple[int, int, int]):
+def shader(t:Image.Image, pRgb: Tuple[int, int, int]):
     c = (197, 17, 17)
     c2 = (122, 8, 56)
     entry = pRgb
@@ -130,7 +129,8 @@ def shader(t, pRgb: Tuple[int, int, int]):
             int(entry[1] * shadeDefault),
             int(entry[2] * shadeDefault),
         ]
-    except Exception:
+    except Exception as e:
+        print(e)
         print("ERROR: " + str(shadeDefault) + ", " + str(factor))
 
     hsb = list(colorsys.rgb_to_hsv(shade[0], shade[1], shade[2]))

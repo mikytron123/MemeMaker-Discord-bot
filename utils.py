@@ -48,7 +48,7 @@ async def getimagedata(
             if link.endswith(".mp4") or link.endswith(".webm"):
                 return Imagedata(b"", "", "link must redirect to a gif")
             link = await tenorsearch(link)
-            if link == "error":
+            if link is None:
                 return Imagedata(
                     b"", "", "error finding gif on tenor, use direct gif instead"
                 )
@@ -66,9 +66,11 @@ async def getimagedata(
         return Imagedata(imgbytes, filename, "")
 
 
-async def tenorsearch(url: str) -> str:
+async def tenorsearch(url: str) -> Optional[str]:
     # set the apikey and limit
     apikey = os.getenv("TENOR_TOKEN")
+    if apikey is None:
+        return
     ckey = "MemeBot"
     id = url.split("-")[-1]
 
@@ -83,7 +85,7 @@ async def tenorsearch(url: str) -> str:
         tenor_url = response["results"][0]["media_formats"]["gif"]["url"]
         return tenor_url
     else:
-        return "error"
+        return
 
 
 async def memerequest(background: str, text: str) -> bytes:
@@ -93,8 +95,7 @@ async def memerequest(background: str, text: str) -> bytes:
         async with session.post(url=baseurl, data=payload) as response:
             response = await response.json()
         async with session.get(response["url"]) as resp:
-            imagebytes = await resp.read()
-            return imagebytes
+            return await resp.read()
 
 
 def seekrandomframe(imgbytes: bytes) -> BytesIO:
@@ -111,5 +112,5 @@ def seekrandomframe(imgbytes: bytes) -> BytesIO:
 
 
 def clean_str(filename: str) -> str:
-    filename = filename.replace(" ", "_")
-    return "".join(filter(str.isalnum, filename))
+    filename_clean = filename.replace(" ", "_")
+    return "".join(filter(str.isalnum, filename_clean))
