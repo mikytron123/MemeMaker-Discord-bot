@@ -82,11 +82,18 @@ async def tenorsearch(url: str) -> Optional[str]:
 
 async def memerequest(background: str, text: str) -> bytes:
     baseurl = "https://api.memegen.link/images/custom"
-    payload = {"background": background, "text": text.split(",")}
+    text = list(map(lambda x: x.strip(), text.split(",")))
+    payload = {"background": background, "text": text}
     async with aiohttp.ClientSession() as session:
         async with session.post(url=baseurl, data=payload) as response:
             response = await response.json()
-        async with session.get(response["url"]) as resp:
+            meme_url = response["url"]
+            # only bottom text case
+            if text[0] == "":
+                meme_text = urlparse(meme_url).path.split("/")[-1]
+                meme_url = meme_url.replace(meme_text, f"_/{meme_text}")
+
+        async with session.get(meme_url) as resp:
             return await resp.read()
 
 
