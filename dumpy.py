@@ -36,7 +36,6 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
     frames: list[Image.Image] = []
 
     # these constants are now variables.
-    fac = 1.00
     mox = 74
     moy = 63
     moguses: list[Image.Image] = []
@@ -108,10 +107,10 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
 def shader(t: Image.Image, pRgb: Tuple[int, int, int]):
     c = (197, 17, 17)
     c2 = (122, 8, 56)
-    entry = pRgb
+    entry = tuple(map(float, pRgb))
     # brightness check. If the pixel is too dim, the brightness is floored to the
     # standard "black" level.
-    hsb = colorsys.rgb_to_hsv(entry[0], entry[1], entry[2])
+    hsb = list(colorsys.rgb_to_hsv(entry[0], entry[1], entry[2]))
     blackLevel = 0.200
     if hsb[2] < blackLevel:
         entry = colorsys.hsv_to_rgb(hsb[0], hsb[1], blackLevel)
@@ -122,13 +121,13 @@ def shader(t: Image.Image, pRgb: Tuple[int, int, int]):
     if factor > 0:
         factor *= 2
         shadeDefault = shadeDefault - factor
-    shade = [0, 0, 0]
+    shade = (0.0, 0.0, 0.0)
     try:
-        shade = [
-            int(entry[0] * shadeDefault),
-            int(entry[1] * shadeDefault),
-            int(entry[2] * shadeDefault),
-        ]
+        shade = (
+            float(int(entry[0] * shadeDefault)),
+            float(int(entry[1] * shadeDefault)),
+            float(int(entry[2] * shadeDefault)),
+        )
     except Exception as e:
         print(e)
         print("ERROR: " + str(shadeDefault) + ", " + str(factor))

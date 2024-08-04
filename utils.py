@@ -39,11 +39,12 @@ async def getimagedata(
         if filetype == "gif" and "tenor.com" in link:
             if link.endswith(".mp4") or link.endswith(".webm"):
                 return Imagedata(b"", "", "link must redirect to a gif")
-            link = await tenorsearch(link)
-            if link is None:
+            tenor_link = await tenorsearch(link)
+            if tenor_link is None:
                 return Imagedata(
                     b"", "", "error finding gif on tenor, use direct gif instead"
                 )
+            link = tenor_link
 
         response = requests.get(link)
         if response.status_code < 200 or response.status_code > 300:
@@ -62,7 +63,7 @@ async def tenorsearch(url: str) -> Optional[str]:
     # set the apikey and limit
     apikey = os.getenv("TENOR_TOKEN")
     if apikey is None:
-        return
+        return None
     ckey = "MemeBot"
     id = url.split("-")[-1]
 
@@ -77,19 +78,19 @@ async def tenorsearch(url: str) -> Optional[str]:
         tenor_url = response["results"][0]["media_formats"]["gif"]["url"]
         return tenor_url
     else:
-        return
+        return None
 
 
 async def memerequest(background: str, text: str) -> bytes:
     baseurl = "https://api.memegen.link/images/custom"
-    text = list(map(lambda x: x.strip(), text.split(",")))
-    payload = {"background": background, "text": text}
+    payload_text = list(map(lambda x: x.strip(), text.split(",")))
+    payload = {"background": background, "text": payload_text}
     async with aiohttp.ClientSession() as session:
         async with session.post(url=baseurl, data=payload) as response:
             response = await response.json()
             meme_url = response["url"]
             # only bottom text case
-            if text[0] == "":
+            if payload_text[0] == "":
                 meme_text = urlparse(meme_url).path.split("/")[-1]
                 meme_url = meme_url.replace(meme_text, f"_/{meme_text}")
 

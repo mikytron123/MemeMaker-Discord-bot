@@ -1,8 +1,9 @@
 from functools import wraps
+from typing import Callable
 import time
 
 
-def timer_function(func: callable):
+def timer_function(func: Callable):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         start_time = time.perf_counter()
@@ -14,7 +15,7 @@ def timer_function(func: callable):
     return wrapper
 
 
-def log_arguments(func: callable):
+def log_arguments(func: Callable):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         print(f"Calling {func.__name__} with {kwargs}")

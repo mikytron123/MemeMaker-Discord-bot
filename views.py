@@ -45,7 +45,7 @@ class Form(discord.ui.Modal, title="Form"):
     # It will also have a placeholder, as denoted by the `placeholder` kwarg.
     # By default, it is required and is a short-style input which is exactly
     # what we want.
-    text = discord.ui.TextInput(
+    text: discord.ui.TextInput = discord.ui.TextInput(
         label="caption",
         placeholder="Enter image caption ...",
     )

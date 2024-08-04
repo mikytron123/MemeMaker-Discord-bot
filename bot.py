@@ -13,7 +13,6 @@ from bs4 import BeautifulSoup
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-from fontTools.ttLib import TTFont
 from PIL import Image, ImageDraw, ImageFont
 
 from config import read_configs, parse_cli_args
@@ -31,13 +30,6 @@ args = parse_cli_args()
 configs = read_configs(prod=args.prod)
 TOKEN: str = configs.token
 MY_GUILDS: List[discord.Object] = configs.guilds
-
-
-def has_glyph(font, glyph):
-    for table in font["cmap"].tables:
-        if ord(glyph) in table.cmap.keys():
-            return True
-    return False
 
 
 class MyClient(commands.Bot):
@@ -113,48 +105,6 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
         print(e)
         print(traceback.format_exc())
         await ctx.response.send_message("Error creating pie chart")
-
-
-@client.tree.command(name="spongebobmeme", description="Adds text to spongebob image")
-@app_commands.describe(
-    text="Text to add to image",
-)
-@log_arguments
-@timer_function
-async def spongebobmeme(ctx: discord.Interaction, text: str):
-    await ctx.response.defer()
-    try:
-        addstr = str(text)
-        img = Image.open("images/spongebob.jpg")
-        draw = ImageDraw.Draw(img)
-        startlen = 590
-        FONT_SIZE = 55
-        # loop through and add each character to image
-        for char in addstr:
-            # check for character in fonts
-            checkfont = TTFont("uni.ttf")
-            checkfont2 = TTFont("color.ttf")
-            if has_glyph(checkfont, char):
-                font = ImageFont.truetype("uni.ttf", FONT_SIZE, encoding="unic")
-            elif has_glyph(checkfont2, char):
-                font = ImageFont.truetype("color.ttf", FONT_SIZE)
-            else:
-                font = ImageFont.truetype("uni.ttf", FONT_SIZE, encoding="unic")
-            size = font.getlength(char)
-            # add text to image
-            draw.text((startlen, 20), char, font=font, embedded_color=True)
-            startlen += int(size)
-        # send final image
-        with BytesIO() as image_binary:
-            img.save(image_binary, "PNG")
-            image_binary.seek(0)
-            await ctx.followup.send(
-                file=discord.File(fp=image_binary, filename="image.png")
-            )
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        await ctx.followup.send("Error adding text to image", ephemeral=True)
 
 
 @client.tree.command(name="sotrue", description="Creates a so true meme")
@@ -274,18 +224,21 @@ async def creatememe(
 
             if url_request.status_code == 200:
                 if "tenor.com" in url:
-                    url = await tenorsearch(url)
-                    if url is None:
+                    tenor_url = await tenorsearch(url)
+                    if tenor_url is None:
                         await ctx.followup.send(
                             "couldnt find gif on tenor", ephemeral=True
                         )
+                        return
 
+                    url = tenor_url
                     filename: str = urlparse(url).path.split("/")[-1]  # type: ignore
                 else:
                     content_type = url_request.headers["Content-Type"]
 
                     if "image" not in content_type:
                         await ctx.followup.send("file must be a image", ephemeral=True)
+                        return
             else:
                 await ctx.followup.send("Invalid link", ephemereal=True)  # type: ignore
 
@@ -493,11 +446,10 @@ async def grid(
             image8,
             image9,
         ]
-        imagelst = [x for x in imagelst if x is not None]
-        font = ImageFont.truetype("uni.ttf", FONT_SIZE, encoding="unic")
+        imagelst_filtered = [x for x in imagelst if x is not None]
 
-        rows = round(len(imagelst) ** (1 / 2))
-        if rows**2 < len(imagelst):
+        rows = round(len(imagelst_filtered) ** (1 / 2))
+        if rows**2 < len(imagelst_filtered):
             cols = rows + 1
         else:
             cols = rows
@@ -511,7 +463,7 @@ async def grid(
 
         draw.text((5, 5), title, font=font, fill=(0, 0, 0))
 
-        for ii, img in enumerate(imagelst):
+        for ii, img in enumerate(imagelst_filtered):
             grid_img = Image.open(BytesIO(requests.get(img.url).content))
             grid_img = grid_img.resize((img_width, img_height))
             num = str(ii + 1)
