@@ -1,9 +1,9 @@
 pillow
-requests
-aiohttp
+httpx
+msgspec
 fontTools
 discord.py
-numpy
+numpy<2
 apnggif
 beautifulsoup4
 matplotlib

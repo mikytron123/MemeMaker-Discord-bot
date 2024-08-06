@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import discord
 import nest_asyncio
 import matplotlib.pyplot as plt
-import requests
+import httpx
 from bs4 import BeautifulSoup
 from discord import app_commands
 from discord.ext import commands
@@ -32,7 +32,7 @@ TOKEN: str = configs.token
 MY_GUILDS: List[discord.Object] = configs.guilds
 
 
-class MyClient(commands.Bot):
+class DiscordClient(commands.Bot):
     def __init__(self):
         super().__init__(intents=discord.Intents.default(), command_prefix="$")
 
@@ -44,7 +44,8 @@ class MyClient(commands.Bot):
             await self.tree.sync(guild=MY_GUILD)
 
 
-client = MyClient()
+client = DiscordClient()
+httpClient = httpx.Client(timeout=120)
 
 
 @client.event
@@ -123,7 +124,9 @@ async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
             await ctx.followup.send("file must be a image", ephemeral=True)
 
         img = Image.open("images/sotrue.png")
-        image_bytes = requests.get(file.url).content
+
+        r = httpClient.get(file.url)
+        image_bytes = r.content
         img2 = Image.open(BytesIO(image_bytes))
         img2 = img2.resize((img.size[0] // 2 - 5, img.size[1] // 2 - 5))
         img.paste(img2, (img.size[0] // 2 + 2, img.size[1] // 2 + 2))
@@ -220,7 +223,8 @@ async def creatememe(
         else:
             url = link
             filename = urlparse(link).path.split("/")[-1]
-            url_request = requests.head(url)
+
+            url_request = httpClient.head(url)
 
             if url_request.status_code == 200:
                 if "tenor.com" in url:
@@ -270,9 +274,9 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
     try:
         baseurl = "https://api.memegen.link/templates"
         if search != "":
-            response = requests.get(baseurl, params={"filter": search}).json()
+            response = (httpClient.get(baseurl, params={"filter": search})).json()
         else:
-            response = requests.get(baseurl).json()
+            response = (httpClient.get(baseurl)).json()
 
         if len(response) == 0:
             await ctx.followup.send("No templates found", ephemeral=True)
@@ -314,7 +318,8 @@ async def creatememetemplate(ctx: discord.Interaction, id: str, text: str):
     try:
         baseurl = f"https://api.memegen.link/templates/{id.strip()}"
         payload = {"text": text.split(",")}
-        response = requests.post(baseurl, data=payload).json()
+
+        response = (httpClient.post(baseurl, data=payload)).json()
         await ctx.followup.send(response["url"])
 
     except Exception as e:
@@ -336,23 +341,23 @@ async def kym(ctx: discord.Interaction, search: str):
         header = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
         }
-        resp = requests.get(url, headers=header)
-        soup = BeautifulSoup(resp.content, "html.parser")
-        alllinks: List[str] = []
-        for link in soup.find_all("a"):
-            if (
-                "/memes/" in link["href"]
-                and link.has_attr("class")
-                and link["class"] == ["photo"]
-            ):
-                alllinks.append(f"https://knowyourmeme.com{link['href']}")
 
-        if len(alllinks) == 0:
+        resp = httpClient.get(url, headers=header)
+        soup = BeautifulSoup(resp.content, "html.parser")
+        all_links: list[str] = []
+        for link in soup.find_all("a"):
+            href_val = link["href"]
+            if "/memes/" in href_val and len(href_val.split("/")) == 3:
+                all_links.append(f"https://knowyourmeme.com{href_val}")
+
+        all_links = list(set(all_links))
+
+        if len(all_links) == 0:
             await ctx.followup.send("No results found", ephemeral=True)
             return
 
-        view = Scroller(alllinks)
-        msg = await ctx.followup.send(content=alllinks[0], view=view)
+        view = Scroller(all_links)
+        msg = await ctx.followup.send(content=list(all_links)[0], view=view)
         timeout = await view.wait()
 
         if timeout:
@@ -464,7 +469,7 @@ async def grid(
         draw.text((5, 5), title, font=font, fill=(0, 0, 0))
 
         for ii, img in enumerate(imagelst_filtered):
-            grid_img = Image.open(BytesIO(requests.get(img.url).content))
+            grid_img = Image.open(BytesIO(httpx.get(img.url).content))
             grid_img = grid_img.resize((img_width, img_height))
             num = str(ii + 1)
             corner = (ii % cols) * img_width, (ii // cols) * img_height + 50

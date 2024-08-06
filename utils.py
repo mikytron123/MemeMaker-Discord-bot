@@ -1,19 +1,31 @@
 from io import BytesIO
 import discord
-import requests
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import NamedTuple, Optional
 import os
-import aiohttp
 from PIL import Image
 import random
+import httpx
+import msgspec
 
 
 class Imagedata(NamedTuple):
     imagebytes: bytes
     filename: str
     error: str = ""
+
+
+class Media(msgspec.Struct):
+    url: str
+
+
+class Response(msgspec.Struct):
+    media_formats: dict[str, Media]
+
+
+class TenorAPIResponse(msgspec.Struct):
+    results: list[Response]
 
 
 async def getimagedata(
@@ -30,7 +42,8 @@ async def getimagedata(
             return Imagedata(b"", "", f"file must be a {filetype}")
 
         url = file.url
-        response = requests.get(url)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
         imgbytes = response.content
         filename = str(Path(file.filename).with_suffix(suffix))
         return Imagedata(imgbytes, filename)
@@ -46,9 +59,12 @@ async def getimagedata(
                 )
             link = tenor_link
 
-        response = requests.get(link)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(link)
+
         if response.status_code < 200 or response.status_code > 300:
             return Imagedata(b"", "", "Invalid url")
+
         content_type = response.headers["Content-Type"]
 
         if filetype not in content_type:
@@ -63,19 +79,29 @@ async def tenorsearch(url: str) -> Optional[str]:
     # set the apikey and limit
     apikey = os.getenv("TENOR_TOKEN")
     if apikey is None:
+        print("Tenor API key is not set")
         return None
+
     ckey = "MemeBot"
     id = url.split("-")[-1]
 
-    r = requests.get(
-        "https://tenor.googleapis.com/v2/posts",
-        params={"key": apikey, "ids": id, "client_key": ckey, "media_filter": "gif"},
-    )
+    async with httpx.AsyncClient() as client:
+        r = await client.get(
+            "https://tenor.googleapis.com/v2/posts",
+            params={
+                "key": apikey,
+                "ids": id,
+                "client_key": ckey,
+                "media_filter": "gif",
+            },
+        )
 
     if r.status_code == 200:
+        decoder = msgspec.json.Decoder(type=TenorAPIResponse)
         # load the GIFs using the urls for the smaller GIF sizes
-        response = r.json()
-        tenor_url = response["results"][0]["media_formats"]["gif"]["url"]
+        # response = r.json()
+        response = decoder.decode(r.content)
+        tenor_url = response.results[0].media_formats["gif"].url
         return tenor_url
     else:
         return None
@@ -85,17 +111,18 @@ async def memerequest(background: str, text: str) -> bytes:
     baseurl = "https://api.memegen.link/images/custom"
     payload_text = list(map(lambda x: x.strip(), text.split(",")))
     payload = {"background": background, "text": payload_text}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url=baseurl, data=payload) as response:
-            response = await response.json()
-            meme_url = response["url"]
-            # only bottom text case
-            if payload_text[0] == "":
-                meme_text = urlparse(meme_url).path.split("/")[-1]
-                meme_url = meme_url.replace(meme_text, f"_/{meme_text}")
 
-        async with session.get(meme_url) as resp:
-            return await resp.read()
+    async with httpx.AsyncClient() as client:
+        req = await client.post(url=baseurl, data=payload)
+        response = req.json()
+        meme_url = response["url"]
+        # only bottom text case
+        if payload_text[0] == "":
+            meme_text = urlparse(meme_url).path.split("/")[-1]
+            meme_url = meme_url.replace(meme_text, f"_/{meme_text}")
+
+        resp = await client.get(meme_url)
+        return resp.content
 
 
 def seekrandomframe(imgbytes: bytes) -> BytesIO:
