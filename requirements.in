@@ -1,0 +1,11 @@
+pillow
+httpx
+msgspec
+discord.py
+numpy<2
+apnggif
+beautifulsoup4
+matplotlib
+nest_asyncio
+python-dotenv
+
