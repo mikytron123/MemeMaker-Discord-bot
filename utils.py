@@ -127,7 +127,7 @@ async def memerequest(background: str, text: str) -> bytes:
 
 def seekrandomframe(imgbytes: bytes) -> BytesIO:
     gif = Image.open(BytesIO(imgbytes))
-    num_frames = gif.n_frames
+    num_frames = getattr(gif, "n_frames", 1)
     # select random frame
     rand_frame = random.randint(0, num_frames - 1)
     gif.seek(rand_frame)

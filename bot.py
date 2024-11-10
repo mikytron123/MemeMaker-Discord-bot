@@ -50,8 +50,10 @@ httpClient = httpx.Client(timeout=120)
 
 @client.event
 async def on_ready():
-    print(f"Logged in as {client.user} (ID: {client.user.id})")
-    print("------")
+    user = client.user
+    if user is not None:
+        print(f"Logged in as {user} (ID: {user.id})")
+        print("------")
 
 
 @client.tree.context_menu(name="StickerInfo")

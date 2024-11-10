@@ -82,6 +82,8 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
                 # Grabs appropriate pixel frame
                 pixel = moguses[count]
                 pixelinputimg = inputimage.load()
+                if pixelinputimg is None:
+                    raise Exception("Null image")
                 pixel = shader(pixel, pixelinputimg[x, y])
                 # overlays it (if not null)
                 if pixel is not None:
