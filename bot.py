@@ -4,7 +4,6 @@ import traceback
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional
-from urllib.parse import urlparse
 import discord
 import nest_asyncio
 import matplotlib.pyplot as plt
@@ -18,7 +17,8 @@ from PIL import Image, ImageDraw, ImageFont
 from config import read_configs, parse_cli_args
 from decorators import log_arguments, timer_function
 from dumpy import dumpy
-from utils import clean_str, getimagedata, memerequest, tenorsearch
+from image_handler import FileImage, create_image_class
+from utils import clean_str, memerequest
 from views import EditView, Scroller
 
 load_dotenv()
@@ -119,16 +119,12 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
 async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
     await ctx.response.defer()
     try:
-        if file.content_type is None:
-            await ctx.followup.send("Unknown file type", ephemeral=True)
-
-        if "image" not in file.content_type:  # type: ignore
-            await ctx.followup.send("file must be a image", ephemeral=True)
+        file_img = FileImage(file=file, filetype="image")
+        image_bytes = await file_img.get_image_bytes()
+        filename = str(Path(file_img.get_filename()).with_suffix(".png"))
 
         img = Image.open("images/sotrue.png")
 
-        r = httpClient.get(file.url)
-        image_bytes = r.content
         img2 = Image.open(BytesIO(image_bytes))
         img2 = img2.resize((img.size[0] // 2 - 5, img.size[1] // 2 - 5))
         img.paste(img2, (img.size[0] // 2 + 2, img.size[1] // 2 + 2))
@@ -138,8 +134,12 @@ async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
             img.save(image_binary, "PNG")
             image_binary.seek(0)
             await ctx.followup.send(
-                file=discord.File(fp=image_binary, filename=f"{file.filename}.png")
+                file=discord.File(fp=image_binary, filename=filename)
             )
+    except ValueError as v:
+        print(v)
+        await ctx.followup.send(str(v), ephemeral=True)
+        return
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -160,14 +160,9 @@ async def amogus(
 ):
     await ctx.response.defer()
     try:
-        imagedata = await getimagedata(file, link, "image", ".gif")
-        error = imagedata.error
-
-        if error != "":
-            await ctx.followup.send(error, ephemeral=True)
-            return
-        imagebytes = imagedata.imagebytes
-        filename = imagedata.filename
+        img = await create_image_class(file, link, "image")
+        imagebytes = await img.get_image_bytes()
+        filename = str(Path(img.get_filename()).with_suffix(".gif"))
 
         frames = dumpy(imagebytes, lines)
         frame_one = frames[0]
@@ -182,11 +177,12 @@ async def amogus(
                 disposal=2,
             )
             gif_binary.seek(0)
-            await ctx.followup.send(
-                file=discord.File(
-                    fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
-                )
-            )
+            await ctx.followup.send(file=discord.File(fp=gif_binary, filename=filename))
+    except ValueError as v:
+        print(v)
+        await ctx.followup.send(str(v), ephemeral=True)
+        return
+
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -209,44 +205,9 @@ async def creatememe(
 ):
     await ctx.response.defer()
     try:
-        if (file is None and link == "") or (file is not None and link != ""):
-            await ctx.followup.send(
-                "Must specify exactly one of file or link argument", ephemeral=True
-            )
-
-        if file is not None:
-            if file.content_type is None:
-                await ctx.followup.send("Unknown file type", ephemeral=True)
-
-            if "image" not in file.content_type:  # type: ignore
-                await ctx.followup.send("file must be a image", ephemeral=True)
-            url = file.url
-            filename = file.filename
-        else:
-            url = link
-            filename = urlparse(link).path.split("/")[-1]
-
-            url_request = httpClient.head(url)
-
-            if url_request.status_code == 200:
-                if "tenor.com" in url:
-                    tenor_url = await tenorsearch(url)
-                    if tenor_url is None:
-                        await ctx.followup.send(
-                            "couldnt find gif on tenor", ephemeral=True
-                        )
-                        return
-
-                    url = tenor_url
-                    filename: str = urlparse(url).path.split("/")[-1]  # type: ignore
-                else:
-                    content_type = url_request.headers["Content-Type"]
-
-                    if "image" not in content_type:
-                        await ctx.followup.send("file must be a image", ephemeral=True)
-                        return
-            else:
-                await ctx.followup.send("Invalid link", ephemereal=True)  # type: ignore
+        img = await create_image_class(file, link, "image")
+        url = img.get_url()
+        filename = img.get_filename()
 
         imagebytes = await memerequest(url, text)
         view = EditView(url, filename)
@@ -260,6 +221,11 @@ async def creatememe(
                 await msg.edit(view=None)  # type: ignore
             elif isinstance(msg, discord.Interaction):
                 await msg.edit_original_response(view=None)  # type: ignore
+
+    except ValueError as v:
+        print(v)
+        await ctx.followup.send(str(v), ephemeral=True)
+        return
 
     except Exception as e:
         print(e)
@@ -387,15 +353,10 @@ async def speechbubble(
 ):
     await ctx.response.defer()
     try:
-        imagedata = await getimagedata(file, link, "image", ".png")
-        error = imagedata.error
+        img = await create_image_class(file, link, "image")
+        imagebytes = await img.get_image_bytes()
+        filename = img.get_filename()
 
-        if error != "":
-            await ctx.followup.send(error, ephemeral=True)
-            return
-
-        imagebytes = imagedata.imagebytes
-        filename = imagedata.filename
         img = Image.open(BytesIO(imagebytes))
 
         bubble = Image.open("images/speechbubble.png")
@@ -416,6 +377,11 @@ async def speechbubble(
                     filename=str(Path(filename).with_suffix(".png")),
                 )
             )
+
+    except ValueError as v:
+        print(v)
+        await ctx.followup.send(str(v), ephemeral=True)
+        return
 
     except Exception as e:
         print(e)

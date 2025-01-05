@@ -10,7 +10,8 @@ from PIL import Image, ImageSequence
 
 from decorators import timer_function, log_arguments
 
-from utils import getimagedata, seekrandomframe
+from image_handler import create_image_class
+from utils import seekrandomframe
 from views import RerollView
 
 
@@ -30,15 +31,18 @@ class GifCommands(commands.Cog):
     ):
         await ctx.response.defer()
         try:
-            imagedata = await getimagedata(file, link, "png", ".png")
-            error = imagedata.error
+            img = await create_image_class(file, link, "png")
+            filename = str(Path(img.get_filename()).with_suffix(".png"))
+            imagebytes = await img.get_image_bytes()
+            # imagedata = await getimagedata(file, link, "png", ".png")
+            # error = imagedata.error
 
-            if error != "":
-                await ctx.followup.send(error, ephemeral=True)
-                return
+            # if error != "":
+            #     await ctx.followup.send(error, ephemeral=True)
+            #     return
 
-            imagebytes = imagedata.imagebytes
-            filename = imagedata.filename
+            # imagebytes = imagedata.imagebytes
+            # filename = imagedata.filename
 
             with open(filename, "wb") as f:
                 f.write(imagebytes)
@@ -53,7 +57,10 @@ class GifCommands(commands.Cog):
             filepath.unlink()
             filepath = Path(filename).with_suffix(".gif")
             filepath.unlink()
-
+        except ValueError as v:
+            print(v)
+            await ctx.followup.send(str(v), ephemeral=True)
+            return
         except Exception as e:
             print(e)
             print(traceback.format_exc())
@@ -71,15 +78,9 @@ class GifCommands(commands.Cog):
     ):
         await ctx.response.defer()
         try:
-            imagedata = await getimagedata(file, link, "gif", ".png")
-            error = imagedata.error
-
-            if error != "":
-                await ctx.followup.send(error, ephemeral=True)
-                return
-
-            imgbytes = imagedata.imagebytes
-            filename = imagedata.filename
+            img = await create_image_class(file, link, "gif")
+            imgbytes = await img.get_image_bytes()
+            filename = str(Path(img.get_filename()).with_suffix(".png"))
 
             image_binary = seekrandomframe(imgbytes)
             # send final image
@@ -95,6 +96,10 @@ class GifCommands(commands.Cog):
                     await msg.edit(view=None)  # type: ignore
                 elif isinstance(msg, discord.Interaction):
                     await msg.edit_original_response(view=None)  # type: ignore
+        except ValueError as v:
+            print(v)
+            await ctx.followup.send(str(v), ephemeral=True)
+            return
 
         except Exception as e:
             print(e)
@@ -113,15 +118,9 @@ class GifCommands(commands.Cog):
     ):
         await ctx.response.defer()
         try:
-            imagedata = await getimagedata(file, link, "gif", ".gif")
-            error = imagedata.error
-
-            if error != "":
-                await ctx.followup.send(error, ephemeral=True)
-                return
-
-            imgbytes = imagedata.imagebytes
-            filename = imagedata.filename
+            img = await create_image_class(file, link, "gif")
+            imgbytes = await img.get_image_bytes()
+            filename = img.get_filename()
 
             # read image from url
             gif = Image.open(BytesIO(imgbytes))
@@ -149,6 +148,10 @@ class GifCommands(commands.Cog):
                         fp=gif_binary, filename=str(Path(filename).with_suffix(".gif"))
                     )
                 )
+        except ValueError as v:
+            print(v)
+            await ctx.followup.send(str(v), ephemeral=True)
+            return
 
         except Exception as e:
             print(e)
