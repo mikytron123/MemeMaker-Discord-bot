@@ -108,7 +108,7 @@ async def create_image_class(
     if file is not None:
         return FileImage(file=file, filetype=filetype)
     else:
-        if filetype == "gif" and "tenor.com" in link:
+        if "tenor.com" in link:
             if link.endswith(".mp4") or link.endswith(".webm"):
                 raise ValueError("link must redirect to a gif")
             tenor_link = await tenorsearch(link)
