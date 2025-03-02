@@ -74,13 +74,9 @@ class UrlImage(DiscordImage):
     url: str = field(init=False)
     filename: str = field(init=False)
 
-    def __attrs_post_init__(self):
-        self.url = self.link
-        self.filename = str(Path(urlparse(self.link).path.split("/")[-1]))
-        self.validate_url()
-
-    def validate_url(self):
-        response = httpx.head(self.url)
+    @link.validator
+    def _check_link(self,attribute,value:str):
+        response = httpx.head(value)
 
         if response.status_code < 200 or response.status_code > 300:
             raise ValueError("Invalid url, returned non 200 status code")
@@ -90,6 +86,10 @@ class UrlImage(DiscordImage):
         if self.filetype not in content_type:
             raise ValueError(f"link must redirect to a {self.filetype}")
 
+    def __attrs_post_init__(self):
+        self.url = self.link
+        self.filename = str(Path(urlparse(self.link).path.split("/")[-1]))
+
     def get_url(self) -> str:
         return self.url
 
@@ -98,7 +98,7 @@ class UrlImage(DiscordImage):
 
     async def get_image_bytes(self):
         async with httpx.AsyncClient() as client:
-            response = await client.get(self.link)
+            response = await client.get(self.url)
 
         imgbytes = response.content
         return imgbytes
