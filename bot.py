@@ -305,7 +305,7 @@ async def creatememetemplate(ctx: discord.Interaction, id: str, text: str):
 async def kym(ctx: discord.Interaction, search: str):
     await ctx.response.defer()
     try:
-        url = f'https://knowyourmeme.com/search?q={search.replace(" ", "+")}'
+        url = f"https://knowyourmeme.com/search?q={search.replace(' ', '+')}"
         header = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
         }
@@ -353,9 +353,9 @@ async def speechbubble(
 ):
     await ctx.response.defer()
     try:
-        img = await create_image_class(file, link, "image")
-        imagebytes = await img.get_image_bytes()
-        filename = img.get_filename()
+        discord_image = await create_image_class(file, link, "image")
+        imagebytes = await discord_image.get_image_bytes()
+        filename = discord_image.get_filename()
 
         img = Image.open(BytesIO(imagebytes))
 

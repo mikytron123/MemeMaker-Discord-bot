@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from typing import Optional
 import os
 import msgspec
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 class Media(msgspec.Struct):
@@ -24,25 +24,26 @@ class TenorAPIResponse(msgspec.Struct):
 @define
 class DiscordImage(ABC):
     filetype: str
+    url: str = field(init=False)
+    filename: str = field(init=False)
 
-    @abstractmethod
     async def get_image_bytes(self) -> bytes:
-        pass
+        async with httpx.AsyncClient() as client:
+            response = await client.get(self.url)
 
-    @abstractmethod
+        imgbytes = response.content
+        return imgbytes
+
     def get_filename(self) -> str:
-        pass
+        return self.filename
 
-    @abstractmethod
     def get_url(self) -> str:
-        pass
+        return self.url
 
 
 @define
 class FileImage(DiscordImage):
     file: discord.Attachment = field()
-    url: str = field(init=False)
-    filename: str = field(init=False)
 
     @file.validator
     def _check_file(self, attribute, value: discord.Attachment):
@@ -55,27 +56,13 @@ class FileImage(DiscordImage):
         self.url = self.file.url
         self.filename = self.file.filename
 
-    def get_url(self) -> str:
-        return self.url
-
-    def get_filename(self) -> str:
-        return self.filename
-
-    async def get_image_bytes(self) -> bytes:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(self.url)
-        imgbytes = response.content
-        return imgbytes
-
 
 @define
 class UrlImage(DiscordImage):
     link: str = field()
-    url: str = field(init=False)
-    filename: str = field(init=False)
 
     @link.validator
-    def _check_link(self,attribute,value:str):
+    def _check_link(self, attribute, value: str):
         response = httpx.head(value)
 
         if response.status_code < 200 or response.status_code > 300:
@@ -89,19 +76,6 @@ class UrlImage(DiscordImage):
     def __attrs_post_init__(self):
         self.url = self.link
         self.filename = str(Path(urlparse(self.link).path.split("/")[-1]))
-
-    def get_url(self) -> str:
-        return self.url
-
-    def get_filename(self) -> str:
-        return self.filename
-
-    async def get_image_bytes(self):
-        async with httpx.AsyncClient() as client:
-            response = await client.get(self.url)
-
-        imgbytes = response.content
-        return imgbytes
 
 
 async def create_image_class(
