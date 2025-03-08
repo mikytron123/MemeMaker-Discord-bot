@@ -317,10 +317,10 @@ async def kym(ctx: discord.Interaction, search: str):
             href_val = link["href"]
             if (
                 "/memes/" in href_val
-                and len(href_val.split("/")) == 5
+                and len(href_val.split("/")) == 3
                 and "=" not in href_val
             ):
-                all_links.append(f"{href_val}")
+                all_links.append(f"https://knowyourmeme.com{href_val}")
 
         all_links = list(dict.fromkeys(all_links))
 
