@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
+import tempfile
 from PIL import Image, ImageDraw, ImageFont
 
 from config import read_configs, parse_cli_args
@@ -96,13 +97,13 @@ async def piechart(ctx: discord.Interaction, labels: str, values: str, title: st
         plt.title(title)
         plt.legend(labels=labelslst, loc="best", bbox_to_anchor=(1, 0.85))
         filename = f"{clean_str(title)}.png"
-        plt.savefig(filename, bbox_inches="tight")
 
-        await ctx.response.send_message(
-            file=discord.File(fp=filename, filename=filename)
-        )
-        filepath = Path(filename)
-        filepath.unlink()
+        with tempfile.NamedTemporaryFile(suffix=".png") as fp:
+            plt.savefig(fp.name, bbox_inches="tight")
+
+            await ctx.response.send_message(
+                file=discord.File(fp=fp.name, filename=filename)
+            )
 
     except Exception as e:
         print(e)

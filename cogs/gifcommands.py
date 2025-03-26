@@ -5,6 +5,7 @@ from discord.ext import commands
 import discord
 from discord import app_commands
 import traceback
+import tempfile
 from apnggif import apnggif
 from PIL import Image, ImageSequence
 
@@ -32,31 +33,18 @@ class GifCommands(commands.Cog):
         await ctx.response.defer()
         try:
             img = await create_image_class(file, link, "png")
-            filename = str(Path(img.get_filename()).with_suffix(".png"))
+            filename = str(Path(img.get_filename()).with_suffix(".gif"))
             imagebytes = await img.get_image_bytes()
-            # imagedata = await getimagedata(file, link, "png", ".png")
-            # error = imagedata.error
 
-            # if error != "":
-            #     await ctx.followup.send(error, ephemeral=True)
-            #     return
+            with tempfile.NamedTemporaryFile(suffix=".png") as fp:
+                fp.write(imagebytes)
+                # convert to gif
+                apnggif(fp.name)
+                filepath = str(Path(fp.name).with_suffix(".gif"))
+                await ctx.followup.send(
+                    file=discord.File(fp=filepath, filename=filename)
+                )
 
-            # imagebytes = imagedata.imagebytes
-            # filename = imagedata.filename
-
-            with open(filename, "wb") as f:
-                f.write(imagebytes)
-            # convert to gif
-            apnggif(filename)
-
-            await ctx.followup.send(
-                file=discord.File(str(Path(filename).with_suffix(".gif")))
-            )
-            # remove temporary file
-            filepath = Path(filename)
-            filepath.unlink()
-            filepath = Path(filename).with_suffix(".gif")
-            filepath.unlink()
         except ValueError as v:
             print(v)
             await ctx.followup.send(str(v), ephemeral=True)
