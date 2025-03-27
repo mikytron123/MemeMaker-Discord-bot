@@ -37,13 +37,16 @@ class GifCommands(commands.Cog):
             imagebytes = await img.get_image_bytes()
 
             with tempfile.NamedTemporaryFile(suffix=".png") as fp:
-                fp.write(imagebytes)
-                # convert to gif
-                apnggif(fp.name)
-                filepath = str(Path(fp.name).with_suffix(".gif"))
-                await ctx.followup.send(
-                    file=discord.File(fp=filepath, filename=filename)
-                )
+                with tempfile.NamedTemporaryFile(suffix=".gif") as fp2:
+                    fp.write(imagebytes)
+                    # convert to gif
+                    apnggif(png=fp.name, gif=fp2.name)
+                    filepath = str(Path(fp2.name).with_suffix(".gif"))
+                    print(fp.name)
+                    print(fp2.name)
+                    await ctx.followup.send(
+                        file=discord.File(fp=filepath, filename=filename)
+                    )
 
         except ValueError as v:
             print(v)
