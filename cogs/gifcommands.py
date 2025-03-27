@@ -42,8 +42,6 @@ class GifCommands(commands.Cog):
                     # convert to gif
                     apnggif(png=fp.name, gif=fp2.name)
                     filepath = str(Path(fp2.name).with_suffix(".gif"))
-                    print(fp.name)
-                    print(fp2.name)
                     await ctx.followup.send(
                         file=discord.File(fp=filepath, filename=filename)
                     )
