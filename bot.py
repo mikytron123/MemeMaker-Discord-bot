@@ -315,11 +315,12 @@ async def kym(ctx: discord.Interaction, search: str):
         soup = BeautifulSoup(resp.content, "html.parser")
         all_links: list[str] = []
         for link in soup.find_all("a"):
-            href_val = link["href"]
+            href_val = link.get("href", "")
             if (
                 "/memes/" in href_val
                 and len(href_val.split("/")) == 3
                 and "=" not in href_val
+                and link.get("class", "") == ["item"]
             ):
                 all_links.append(f"https://knowyourmeme.com{href_val}")
 
