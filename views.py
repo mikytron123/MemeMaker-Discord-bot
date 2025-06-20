@@ -8,7 +8,7 @@ from utils import memerequest, seekrandomframe
 class Scroller(discord.ui.View):
     def __init__(
         self,
-        responselst,
+        responselst: list[str],
         embedfunc: Optional[Callable[[Any, int], discord.Embed]] = None,
     ) -> None:
         super().__init__(timeout=20)

@@ -6,15 +6,16 @@ from pathlib import Path
 from typing import List, Optional
 import discord
 import nest_asyncio
+import asyncio
 import matplotlib.pyplot as plt
 import httpx
 from bs4 import BeautifulSoup
-from discord import app_commands
+from discord import app_commands, Emoji
 from discord.ext import commands
 from dotenv import load_dotenv
 import tempfile
 from PIL import Image, ImageDraw, ImageFont
-
+import numpy as np
 from config import read_configs, parse_cli_args
 from decorators import log_arguments, timer_function
 from dumpy import dumpy
@@ -77,6 +78,78 @@ async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
         print(e)
         print(traceback.format_exc())
         await ctx.response.send_message("Error finding sticker", ephemeral=True)
+
+
+@client.tree.context_menu(name="Its Over")
+@log_arguments
+@timer_function
+async def react_over(ctx: discord.Interaction, message: discord.Message):
+    await ctx.response.defer()
+    try:
+        over_emotes = np.array(
+            [
+                "Ov1_Dover",
+                "Ov2_Ogre",
+                "Ov3_Garftover",
+                "Ov4_Joever",
+                "Ov5_Beyondover",
+                "Ov6_Daredover",
+                "Ov7_Maxvocadover",
+                "Ov8_Kangover",
+                "Ov9_Pover",
+                "Ov10_noruegover",
+                "Ov11_Vidover",
+                "Ov12_nikkover",
+                "Ov13_lizardkingover",
+                "Ov14_Strummer",
+                "Ov15_Vertover",
+                "Ov16_ileiadover",
+                "Ov17_Ryanover",
+                "Ov18_SlimLover",
+                "Ov19_Krover",
+                "Ov20_Bartendover",
+            ]
+        )
+        current_reactions = message.reactions
+
+        current_over_reactions = np.array(
+            list(
+                map(
+                    lambda y: y.emoji.name, # type: ignore
+                    filter(
+                        lambda x: isinstance(x.emoji, Emoji)
+                        and x.emoji.name in over_emotes,
+                        current_reactions,
+                    ),
+                )
+            )
+        )
+        remaining_over_reactions = over_emotes[
+            np.isin(over_emotes, current_over_reactions, invert=True)
+        ]
+
+        server = ctx.guild
+        if server is None:
+            await ctx.response.send_message("Missing Server", ephemeral=True)
+            return
+
+        server_emotes = server.emojis
+
+        available_over_emotes = list(
+            filter(lambda x: x.name in remaining_over_reactions, server_emotes)
+        )
+        for emote in available_over_emotes:
+            await message.add_reaction(emote)
+            await asyncio.sleep(1)
+
+        await ctx.followup.send("Reactions added", ephemeral=True)
+        await asyncio.sleep(5)
+        await ctx.delete_original_response()
+
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.response.send_message("Error reacting to emote", ephemeral=True)
 
 
 @client.tree.command(name="piechart", description="Creates a pie chart")
@@ -366,7 +439,7 @@ async def speechbubble(
         finalwidth = img.size[0]
         finalheight = img.size[1] + bubble.size[1]
 
-        newimg = Image.new("RGBA", (finalwidth, finalheight), (255, 255, 255, 0))
+        newimg = Image.new("RGBA", (finalwidth, finalheight), (255, 255, 255, 0))  # type: ignore
         newimg.paste(bubble, (0, 0))
         newimg.paste(img, (0, bubble.size[1]))
 
@@ -436,7 +509,7 @@ async def grid(
         final_width = img_width * cols
         final_height = img_height * rows + 50
 
-        newimg = Image.new("RGB", (final_width, final_height), color="white")
+        newimg = Image.new("RGB", (final_width, final_height), color="white")  # type: ignore
         draw = ImageDraw.Draw(newimg)
         font = ImageFont.truetype("uni.ttf", FONT_SIZE, encoding="unic")
 
