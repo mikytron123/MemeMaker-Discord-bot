@@ -3,7 +3,7 @@ import glob
 import traceback
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, cast
 import discord
 import nest_asyncio
 import asyncio
@@ -115,7 +115,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
         current_over_reactions = np.array(
             list(
                 map(
-                    lambda y: y.emoji.name, # type: ignore
+                    lambda y: cast(Emoji,y.emoji).name, 
                     filter(
                         lambda x: isinstance(x.emoji, Emoji)
                         and x.emoji.name in over_emotes,
@@ -133,7 +133,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
             await ctx.response.send_message("Missing Server", ephemeral=True)
             return
 
-        server_emotes = server.emojis
+        server_emotes = tuple(filter(lambda x: x.available,server.emojis))
 
         available_over_emotes = list(
             filter(lambda x: x.name in remaining_over_reactions, server_emotes)
