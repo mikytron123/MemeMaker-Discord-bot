@@ -88,7 +88,6 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
     try:
         over_emotes = np.array(
             [
-                "Ov1_Dover",
                 "Ov2_Ogre",
                 "Ov3_Garftover",
                 "Ov4_Joever",
@@ -108,6 +107,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov18_SlimLover",
                 "Ov19_Krover",
                 "Ov20_Bartendover",
+                "Ov21_Maddover"
             ]
         )
         current_reactions = message.reactions
@@ -138,6 +138,10 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
         available_over_emotes = list(
             filter(lambda x: x.name in remaining_over_reactions, server_emotes)
         )
+        
+        emote_limit = 20-len(current_reactions)
+        available_over_emotes = available_over_emotes[-emote_limit:]
+
         for emote in available_over_emotes:
             await message.add_reaction(emote)
             await asyncio.sleep(1)
