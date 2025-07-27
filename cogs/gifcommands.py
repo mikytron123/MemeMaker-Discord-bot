@@ -36,9 +36,12 @@ class GifCommands(commands.Cog):
             filename = str(Path(img.get_filename()).with_suffix(".gif"))
             imagebytes = await img.get_image_bytes()
 
-            with tempfile.NamedTemporaryFile(suffix=".png") as fp:
+            with tempfile.NamedTemporaryFile(
+                suffix=".png", delete_on_close=False
+            ) as fp:
                 with tempfile.NamedTemporaryFile(suffix=".gif") as fp2:
                     fp.write(imagebytes)
+                    fp.close()
                     # convert to gif
                     apnggif(png=fp.name, gif=fp2.name)
                     filepath = str(Path(fp2.name).with_suffix(".gif"))
