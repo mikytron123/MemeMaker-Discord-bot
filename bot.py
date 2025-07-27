@@ -107,7 +107,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov18_SlimLover",
                 "Ov19_Krover",
                 "Ov20_Bartendover",
-                "Ov21_Maddover"
+                "Ov21_Maddover",
             ]
         )
         current_reactions = message.reactions
@@ -115,7 +115,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
         current_over_reactions = np.array(
             list(
                 map(
-                    lambda y: cast(Emoji,y.emoji).name, 
+                    lambda y: cast(Emoji, y.emoji).name,
                     filter(
                         lambda x: isinstance(x.emoji, Emoji)
                         and x.emoji.name in over_emotes,
@@ -133,13 +133,13 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
             await ctx.response.send_message("Missing Server", ephemeral=True)
             return
 
-        server_emotes = tuple(filter(lambda x: x.available,server.emojis))
+        server_emotes = tuple(filter(lambda x: x.available, server.emojis))
 
         available_over_emotes = list(
             filter(lambda x: x.name in remaining_over_reactions, server_emotes)
         )
-        
-        emote_limit = 20-len(current_reactions)
+
+        emote_limit = 20 - len(current_reactions)
         available_over_emotes = available_over_emotes[-emote_limit:]
 
         for emote in available_over_emotes:
@@ -153,7 +153,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error reacting to message",ephemeral=True)
+        await ctx.followup.send("Error reacting to message", ephemeral=True)
         await asyncio.sleep(5)
         await ctx.delete_original_response()
 
@@ -423,51 +423,6 @@ async def kym(ctx: discord.Interaction, search: str):
         print(e)
         print(traceback.format_exc())
         await ctx.followup.send("Error searching kym", ephemeral=True)
-
-
-@client.tree.command(name="speechbubble", description="Add speechbubble to image")
-@app_commands.describe(file="image file", link="direct link to image")
-@log_arguments
-@timer_function
-async def speechbubble(
-    ctx: discord.Interaction, file: Optional[discord.Attachment] = None, link: str = ""
-):
-    await ctx.response.defer()
-    try:
-        discord_image = await create_image_class(file, link, "image")
-        imagebytes = await discord_image.get_image_bytes()
-        filename = discord_image.get_filename()
-
-        img = Image.open(BytesIO(imagebytes))
-
-        bubble = Image.open("images/speechbubble.png")
-        bubble = bubble.resize((img.size[0], round(img.size[1] / 4)))
-        finalwidth = img.size[0]
-        finalheight = img.size[1] + bubble.size[1]
-
-        newimg = Image.new("RGBA", (finalwidth, finalheight), (255, 255, 255, 0))  # type: ignore
-        newimg.paste(bubble, (0, 0))
-        newimg.paste(img, (0, bubble.size[1]))
-
-        with BytesIO() as image_binary:
-            newimg.save(image_binary, "PNG")
-            image_binary.seek(0)
-            await ctx.followup.send(
-                file=discord.File(
-                    fp=image_binary,
-                    filename=str(Path(filename).with_suffix(".png")),
-                )
-            )
-
-    except ValueError as v:
-        print(v)
-        await ctx.followup.send(str(v), ephemeral=True)
-        return
-
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        await ctx.followup.send("Error adding speechbubble to image", ephemeral=True)
 
 
 @client.tree.command(name="grid", description="Create grid of images")
