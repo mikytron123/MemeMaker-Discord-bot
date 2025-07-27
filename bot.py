@@ -88,6 +88,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
     try:
         over_emotes = np.array(
             [
+                "Ov1_Dover",
                 "Ov2_Ogre",
                 "Ov3_Garftover",
                 "Ov4_Joever",
@@ -95,7 +96,6 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov6_Daredover",
                 "Ov7_Maxvocadover",
                 "Ov8_Kangover",
-                "Ov9_Pover",
                 "Ov10_noruegover",
                 "Ov11_Vidover",
                 "Ov12_nikkover",
@@ -153,7 +153,9 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.response.send_message("Error reacting to emote", ephemeral=True)
+        await ctx.followup.send("Error reacting to message",ephemeral=True)
+        await asyncio.sleep(5)
+        await ctx.delete_original_response()
 
 
 @client.tree.command(name="piechart", description="Creates a pie chart")
