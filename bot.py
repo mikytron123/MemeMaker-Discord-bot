@@ -108,6 +108,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov19_Krover",
                 "Ov20_Bartendover",
                 "Ov21_Maddover",
+                "Ov22_Weebover"
             ]
         )
         current_reactions = message.reactions
