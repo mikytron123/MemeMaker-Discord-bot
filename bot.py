@@ -425,6 +425,80 @@ async def kym(ctx: discord.Interaction, search: str):
         await ctx.followup.send("Error searching kym", ephemeral=True)
 
 
+@client.tree.command(name="birthday", description="Creates a birthday image")
+@app_commands.describe(text="name of user")
+@log_arguments
+@timer_function
+async def bday(ctx: discord.Interaction, text: str):
+    await ctx.response.defer()
+    try:
+        image_path = "images/Laser.jpg"
+        font_path = "uni.ttf"
+        angle = 35
+        img = Image.open(image_path).convert("RGBA")
+        font_size = 35
+
+        # Load font
+        try:
+            if font_path:
+                font = ImageFont.truetype(font_path, font_size)
+            else:
+                font = ImageFont.load_default()
+        except IOError:
+            print(f"Warning: Could not load font from {font_path}. Using default font.")
+            font = ImageFont.load_default()
+
+        text_width = 20 * len(text)
+        text_height = 30
+        # Get font size
+        for font_size in range(35, 15, -1):
+            font = ImageFont.truetype(font_path, font_size)
+            # get bounding box
+            bbox = font.getbbox(text)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+
+            if text_width <= 145:
+                break
+
+        # create a blank image for text
+        x_size = text_width + 5
+        y_size = text_height + 20
+        txt_img = Image.new("RGBA", (x_size, y_size))
+        d = ImageDraw.Draw(txt_img)
+
+        # Draw text on the blank image
+        # Position the text at the center of the temporary image
+        # text_x = (x_size - text_width) / 2
+        # text_y = (y_size - text_height) / 2
+        d.text((0, 0), text, font=font, fill="black")
+
+        # Rotate the text image
+        rotated_txt_img = txt_img.rotate(
+            angle, expand=1, resample=Image.Resampling.BILINEAR
+        )
+
+        # bottom left coord
+        bl_coord = (-8, img.size[1] - 35)
+        # top left coord
+        tl_coord = (bl_coord[0], bl_coord[1] - rotated_txt_img.size[1])
+
+        img.paste(rotated_txt_img, tl_coord, rotated_txt_img)
+        with BytesIO() as image_binary:
+            img.save(image_binary, "PNG")
+            image_binary.seek(0)
+            await ctx.followup.send(
+                file=discord.File(
+                    fp=image_binary,
+                    filename=f"{clean_str(text)}.png",
+                )
+            )
+    except Exception as e:
+        print(e)
+        print(traceback.format_exc())
+        await ctx.followup.send("Error creating birthday image",ephemeral=True)
+
+
 @client.tree.command(name="grid", description="Create grid of images")
 @app_commands.describe(title="title of image", image1="image file")
 @log_arguments
