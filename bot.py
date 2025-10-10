@@ -96,6 +96,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov6_Daredover",
                 "Ov7_Maxvocadover",
                 "Ov8_Kangover",
+                "Ov9_Pover",
                 "Ov10_noruegover",
                 "Ov11_Vidover",
                 "Ov12_nikkover",
@@ -107,8 +108,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov18_SlimLover",
                 "Ov19_Krover",
                 "Ov20_Bartendover",
-                "Ov21_Maddover",
-                "Ov22_Weebover"
+                "Ov22_Weebover",
             ]
         )
         current_reactions = message.reactions
@@ -497,7 +497,7 @@ async def bday(ctx: discord.Interaction, text: str):
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        await ctx.followup.send("Error creating birthday image",ephemeral=True)
+        await ctx.followup.send("Error creating birthday image", ephemeral=True)
 
 
 @client.tree.command(name="grid", description="Create grid of images")
