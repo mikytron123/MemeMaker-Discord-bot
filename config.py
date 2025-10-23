@@ -11,6 +11,7 @@ class Configuration(NamedTuple):
 
 
 def read_configs(prod: bool) -> Configuration:
+    """Reads configuration from file based on the type of environment."""
     conf = configparser.ConfigParser()
     if not prod:
         print("using dev config")

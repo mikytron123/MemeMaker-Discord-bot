@@ -12,8 +12,8 @@ from PIL import Image, ImageSequence
 from decorators import timer_function, log_arguments
 
 from image_handler import create_image_class
+from layoutviews import RerollView
 from utils import seekrandomframe
-from views import RerollView
 
 
 class GifCommands(commands.Cog):
@@ -76,18 +76,13 @@ class GifCommands(commands.Cog):
 
             image_binary = seekrandomframe(imgbytes)
             # send final image
-            view = RerollView(imgbytes, filename)
+            view = RerollView(imgbytes, filename, image_binary)
 
             msg = await ctx.followup.send(
                 file=discord.File(fp=image_binary, filename=filename), view=view
             )
+            view.message = msg
 
-            timeout = await view.wait()
-            if timeout:
-                if isinstance(msg, discord.WebhookMessage):
-                    await msg.edit(view=None)  # type: ignore
-                elif isinstance(msg, discord.Interaction):
-                    await msg.edit_original_response(view=None)  # type: ignore
         except ValueError as v:
             print(v)
             await ctx.followup.send(str(v), ephemeral=True)

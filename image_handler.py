@@ -81,12 +81,16 @@ class UrlImage(DiscordImage):
 async def create_image_class(
     file: Optional[discord.Attachment], link: str, filetype: str
 ) -> DiscordImage:
+    """Constructs a DiscordImage class based on file or link input."""
+
+    # validate exactly one argument is provided
     if (file is None and link == "") or (file is not None and link != ""):
         raise ValueError("Must specify exactly one of file or link argument")
 
     if file is not None:
         return FileImage(file=file, filetype=filetype)
     else:
+        # handle tenor links
         if "tenor.com" in link:
             if link.endswith(".mp4") or link.endswith(".webm"):
                 raise ValueError("link must redirect to a gif")
@@ -97,6 +101,7 @@ async def create_image_class(
 
 
 async def tenorsearch(url: str) -> str:
+    """Searches for gif using tenor API"""
     # set the apikey and limit
     apikey = os.getenv("TENOR_TOKEN")
     if apikey is None:

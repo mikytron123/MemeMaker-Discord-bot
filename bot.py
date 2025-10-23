@@ -20,8 +20,9 @@ from config import read_configs, parse_cli_args
 from decorators import log_arguments, timer_function
 from dumpy import dumpy
 from image_handler import FileImage, create_image_class
+from layoutviews import EditView, ScrollerV2
 from utils import clean_str, memerequest
-from views import EditView, Scroller
+from views import Scroller
 
 load_dotenv()
 
@@ -70,10 +71,14 @@ async def stickerinfo(ctx: discord.Interaction, message: discord.Message):
             return
         sticker = message.stickers[0]
 
-        embed = discord.Embed(title=sticker.name, url=sticker.url)
-        embed.add_field(name="id", value=sticker.id, inline=False)
-        embed.set_image(url=sticker.url)
-        await ctx.response.send_message(embed=embed)
+        view = discord.ui.LayoutView()
+        container = discord.ui.Container(
+            discord.ui.TextDisplay(f"### [{sticker.name}]({sticker.url})"),
+            discord.ui.TextDisplay(f" id\n {sticker.id}"),
+            discord.ui.MediaGallery().add_item(media=sticker.url),
+        )
+        view = view.add_item(container)
+        await ctx.response.send_message(view=view)
     except Exception as e:
         print(e)
         print(traceback.format_exc())
@@ -291,17 +296,12 @@ async def creatememe(
         filename = img.get_filename()
 
         imagebytes = await memerequest(url, text)
-        view = EditView(url, filename)
+        view = EditView(url, filename, imagebytes)
         msg = await ctx.followup.send(
             file=discord.File(fp=BytesIO(imagebytes), filename=filename),
             view=view,
         )
-        timeout = await view.wait()
-        if timeout:
-            if isinstance(msg, discord.WebhookMessage):
-                await msg.edit(view=None)  # type: ignore
-            elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_response(view=None)  # type: ignore
+        view.message = msg
 
     except ValueError as v:
         print(v)
@@ -331,24 +331,25 @@ async def memetemplates(ctx: discord.Interaction, search: str = ""):
             await ctx.followup.send("No templates found", ephemeral=True)
             return
 
-        def embedfunc(response, count: int) -> discord.Embed:
+        def containerfunc(response, count: int) -> discord.ui.Container:
             description = "Use this template by providing the id in /creatememetemplate"
-            embed = discord.Embed(
-                title=response[count]["name"], description=description
-            )
-            embed.add_field(name="id", value=response[count]["id"])
-            embed.set_image(url=response[count]["blank"])
-            return embed
+            title = f"# {response[count]['name']}"
+            title_display = discord.ui.TextDisplay(title)
+            desc_display = discord.ui.TextDisplay(description)
 
-        embed = embedfunc(response, 0)
-        view = Scroller(response, embedfunc=embedfunc)
-        msg = await ctx.followup.send(embed=embed, view=view)
-        timeout = await view.wait()
-        if timeout:
-            if isinstance(msg, discord.WebhookMessage):
-                await msg.edit(view=None)  # type: ignore
-            elif isinstance(msg, discord.Interaction):
-                await msg.edit_original_response(view=None)  # type: ignore
+            field_display = discord.ui.TextDisplay(f" id \n {response[count]['id']}")
+
+            media = discord.ui.MediaGallery()
+            media.add_item(media=response[count]["blank"])
+
+            cont = discord.ui.Container(
+                title_display, desc_display, field_display, media
+            )
+            return cont
+
+        view = ScrollerV2(response, containerfunc=containerfunc)
+        msg = await ctx.followup.send(view=view)
+        view.message = msg
 
     except Exception as e:
         print(e)

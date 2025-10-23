@@ -1,11 +1,22 @@
 from io import BytesIO
-from urllib.parse import urlparse
+import re
+from urllib.parse import urljoin, urlparse
 from PIL import Image
 import random
+from bs4 import BeautifulSoup
 import httpx
 
 
 async def memerequest(background: str, text: str) -> bytes:
+    """Sends a request to the meme generation API and returns the image bytes.
+
+    Args:
+        background (str): The background image URL or identifier.
+        text (str): The text to overlay on the meme, separated by commas for multiple lines
+
+    Returns:
+        bytes: The generated meme image in bytes.
+    """
     baseurl = "https://api.memegen.link/images/custom"
     payload_text = list(map(lambda x: x.strip(), text.split(",")))
     payload = {"background": background, "text": payload_text}
@@ -24,6 +35,11 @@ async def memerequest(background: str, text: str) -> bytes:
 
 
 def seekrandomframe(imgbytes: bytes) -> BytesIO:
+    """Selects a random frame from a GIF image and returns it as a PNG in a BytesIO object.
+    Args:
+        imgbytes (bytes): The bytes of the GIF image.
+    Returns:
+        BytesIO: A BytesIO object containing the PNG image of the selected frame."""
     gif = Image.open(BytesIO(imgbytes))
     num_frames = getattr(gif, "n_frames", 1)
     # select random frame
@@ -37,5 +53,6 @@ def seekrandomframe(imgbytes: bytes) -> BytesIO:
 
 
 def clean_str(filename: str) -> str:
+    """Cleans a string so that it can be used as a filename."""
     filename_clean = filename.replace(" ", "_")
     return "".join(filter(str.isalnum, filename_clean))
