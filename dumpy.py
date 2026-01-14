@@ -7,6 +7,12 @@ from PIL import Image
 
 
 def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
+    """Generates an amongus image from input image bytes
+    Args:
+        imagebytes (bytes): The bytes of the input image.
+        ty (int): The desired height of the output image.
+    Returns:
+        list[Image.Image]: A list of PIL Image frames representing the amongus image."""
     background: str = "dumpy/black.png"
 
     backgroundimg = Image.open(background).convert("RGB")
@@ -84,7 +90,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
                 pixelinputimg = inputimage.load()
                 if pixelinputimg is None:
                     raise Exception("Null image")
-                pixel = shader(pixel, pixelinputimg[x, y])
+                pixel = shader(pixel, pixelinputimg[x, y])  # type: ignore
                 # overlays it (if not null)
                 if pixel is not None:
                     overlaid_image = overlayImages(
