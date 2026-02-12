@@ -1,9 +1,7 @@
 from io import BytesIO
-import re
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 from PIL import Image
 import random
-from bs4 import BeautifulSoup
 import httpx
 
 

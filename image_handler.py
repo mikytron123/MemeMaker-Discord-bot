@@ -1,10 +1,64 @@
 from attrs import define, field
+import os
 import discord
 import httpx
+import msgspec
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import Optional
 from abc import ABC
+
+from datetime import datetime
+
+class DownsizedSmall(msgspec.Struct):
+    height: str
+    width: str
+    mp4_size: str
+    mp4: str
+
+
+class GiphyImage(msgspec.Struct):
+    height: str
+    width: str
+    size: str
+    url: str
+
+
+class Images(msgspec.Struct):
+    downsized_medium: GiphyImage
+
+
+class Data(msgspec.Struct):
+    type: str
+    id: str
+    url: str
+    slug: str
+    bitly_gif_url: str
+    bitly_url: str
+    embed_url: str
+    username: str
+    source: str
+    title: str
+    rating: str
+    content_url: str
+    source_tld: str
+    source_post_url: str
+    is_sticker: int
+    import_datetime: datetime
+    trending_datetime: datetime
+    images: Images
+
+
+class Meta(msgspec.Struct):
+    status: int
+    msg: str
+    response_id: str
+
+
+class GiphyAPIResponse(msgspec.Struct):
+    data: Data
+    meta: Meta
+
 
 @define
 class DiscordImage(ABC):
@@ -75,11 +129,40 @@ async def create_image_class(
     if file is not None:
         return FileImage(file=file, filetype=filetype)
     else:
+        # handle giphy links
+        if "giphy.com/gifs" in link:
+            link = await giphysearch(link)
         # handle tenor links
+        elif "media1.tenor.com" in link:
+            tenor_id = link.split("/")[-2]
+            link = f"https://c.tenor.com/{tenor_id}/tenor.gif"
         if "tenor.com" in link:
             if link.endswith(".mp4") or link.endswith(".webm"):
                 raise ValueError("link must redirect to a gif")
-            else:
-                raise ValueError("Tenor links are not supported. Please provide a direct link to the image")
 
         return UrlImage(link=link, filetype=filetype)
+
+
+async def giphysearch(url: str) -> str:
+    """Searches for a gif using giphy api"""
+    api_key = os.getenv("GIPHY_API_KEY")
+
+    if api_key is None:
+        print("GIPHY_API_KEY is not set")
+        raise ValueError("GIPHY api key is missing")
+
+    gif_id = url.split("-")[-1]
+    params = {"api_key": api_key}
+
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"https://api.giphy.com/v1/gifs/{gif_id}", params=params)
+
+    if r.status_code == 200:
+        decoder = msgspec.json.Decoder(type=GiphyAPIResponse)
+        # load the GIFs using the urls for the medium GIF sizes
+        response = decoder.decode(r.content)
+        giphy_url = response.data.images.downsized_medium.url
+        return giphy_url
+
+    else:
+        raise ValueError("Non 200 status code for giphy api")

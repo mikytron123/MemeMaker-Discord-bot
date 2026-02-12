@@ -1,8 +1,5 @@
 import discord
 from typing import Optional, Any, Callable
-import traceback
-from io import BytesIO
-from utils import memerequest, seekrandomframe
 
 
 class Scroller(discord.ui.View):

@@ -123,8 +123,9 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 map(
                     lambda y: cast(Emoji, y.emoji).name,
                     filter(
-                        lambda x: isinstance(x.emoji, Emoji)
-                        and x.emoji.name in over_emotes,
+                        lambda x: (
+                            isinstance(x.emoji, Emoji) and x.emoji.name in over_emotes
+                        ),
                         current_reactions,
                     ),
                 )
