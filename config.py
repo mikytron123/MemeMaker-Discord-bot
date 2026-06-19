@@ -1,7 +1,8 @@
 import argparse
-import configparser
 import ast
+import configparser
 from typing import List, NamedTuple
+
 import discord
 
 

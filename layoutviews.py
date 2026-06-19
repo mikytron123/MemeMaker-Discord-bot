@@ -1,6 +1,7 @@
-from io import BytesIO
 import traceback
+from io import BytesIO
 from typing import Any, Callable
+
 import discord
 
 from utils import memerequest, seekrandomframe

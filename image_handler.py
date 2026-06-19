@@ -1,14 +1,15 @@
-from attrs import define, field
 import os
+from abc import ABC
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+from urllib.parse import urlparse
+
 import discord
 import httpx
 import msgspec
-from pathlib import Path
-from urllib.parse import urlparse
-from typing import Optional
-from abc import ABC
+from attrs import define, field
 
-from datetime import datetime
 
 class DownsizedSmall(msgspec.Struct):
     height: str
@@ -136,9 +137,8 @@ async def create_image_class(
         elif "media1.tenor.com" in link:
             tenor_id = link.split("/")[-2]
             link = f"https://c.tenor.com/{tenor_id}/tenor.gif"
-        if "tenor.com" in link:
-            if link.endswith(".mp4") or link.endswith(".webm"):
-                raise ValueError("link must redirect to a gif")
+        if "tenor.com" in link and (link.endswith(".mp4") or link.endswith(".webm")):
+            raise ValueError("link must redirect to a gif")
 
         return UrlImage(link=link, filetype=filetype)
 

@@ -1,6 +1,6 @@
+import time
 from functools import wraps
 from typing import Callable
-import time
 
 
 def timer_function(func: Callable):

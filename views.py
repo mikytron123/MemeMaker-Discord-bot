@@ -1,5 +1,6 @@
+from typing import Any, Callable, Optional
+
 import discord
-from typing import Optional, Any, Callable
 
 
 class Scroller(discord.ui.View):

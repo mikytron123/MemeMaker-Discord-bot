@@ -1,8 +1,9 @@
+import random
 from io import BytesIO
 from urllib.parse import urlparse
-from PIL import Image
-import random
+
 import httpx
+from PIL import Image
 
 
 async def memerequest(background: str, text: str) -> bytes:
@@ -16,7 +17,7 @@ async def memerequest(background: str, text: str) -> bytes:
         bytes: The generated meme image in bytes.
     """
     baseurl = "https://api.memegen.link/images/custom"
-    payload_text = list(map(lambda x: x.strip(), text.split(",")))
+    payload_text = [x.strip() for x in text.split(",")]
     payload = {"background": background, "text": payload_text}
 
     async with httpx.AsyncClient() as client:

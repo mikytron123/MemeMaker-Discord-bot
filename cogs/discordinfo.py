@@ -1,7 +1,8 @@
-from discord.ext import commands
 import discord
 from discord import app_commands
-from decorators import timer_function, log_arguments
+from discord.ext import commands
+
+from decorators import log_arguments, timer_function
 
 
 class DiscordInfo(commands.Cog):

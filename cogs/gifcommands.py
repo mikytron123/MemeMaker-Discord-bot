@@ -1,16 +1,16 @@
+import tempfile
+import traceback
 from io import BytesIO
 from pathlib import Path
 from typing import Optional
-from discord.ext import commands
+
 import discord
-from discord import app_commands
-import traceback
-import tempfile
 from apnggif import apnggif
+from discord import app_commands
+from discord.ext import commands
 from PIL import Image, ImageSequence
 
-from decorators import timer_function, log_arguments
-
+from decorators import log_arguments, timer_function
 from image_handler import create_image_class
 from layoutviews import RerollView
 from utils import seekrandomframe
@@ -38,16 +38,15 @@ class GifCommands(commands.Cog):
 
             with tempfile.NamedTemporaryFile(
                 suffix=".png", delete_on_close=False
-            ) as fp:
-                with tempfile.NamedTemporaryFile(suffix=".gif") as fp2:
-                    fp.write(imagebytes)
-                    fp.close()
-                    # convert to gif
-                    apnggif(png=fp.name, gif=fp2.name)
-                    filepath = str(Path(fp2.name).with_suffix(".gif"))
-                    await ctx.followup.send(
-                        file=discord.File(fp=filepath, filename=filename)
-                    )
+            ) as fp, tempfile.NamedTemporaryFile(suffix=".gif") as fp2:
+                fp.write(imagebytes)
+                fp.close()
+                # convert to gif
+                apnggif(png=fp.name, gif=fp2.name)
+                filepath = str(Path(fp2.name).with_suffix(".gif"))
+                await ctx.followup.send(
+                    file=discord.File(fp=filepath, filename=filename)
+                )
 
         except ValueError as v:
             print(v)

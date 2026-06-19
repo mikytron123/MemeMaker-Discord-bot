@@ -1,22 +1,24 @@
 # bot.py
+import asyncio
 import glob
+import tempfile
 import traceback
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional, cast
+
 import discord
-import nest_asyncio
-import asyncio
-import matplotlib.pyplot as plt
 import httpx
+import matplotlib.pyplot as plt
+import nest_asyncio
+import numpy as np
 from bs4 import BeautifulSoup
-from discord import app_commands, Emoji
+from discord import Emoji, app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-import tempfile
 from PIL import Image, ImageDraw, ImageFont
-import numpy as np
-from config import read_configs, parse_cli_args
+
+from config import parse_cli_args, read_configs
 from decorators import log_arguments, timer_function
 from dumpy import dumpy
 from image_handler import FileImage, create_image_class
@@ -98,9 +100,7 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov3_Garftover",
                 "Ov4_Joever",
                 "Ov5_Beyondover",
-                "Ov6_Daredover",
                 "Ov7_Maxvocadover",
-                "Ov8_Kangover",
                 "Ov9_Pover",
                 "Ov10_noruegover",
                 "Ov11_Vidover",
@@ -111,25 +111,23 @@ async def react_over(ctx: discord.Interaction, message: discord.Message):
                 "Ov16_ileiadover",
                 "Ov17_Ryanover",
                 "Ov18_SlimLover",
-                "Ov19_Krover",
                 "Ov20_Bartendover",
                 "Ov22_Weebover",
+                "Ov22_Trinover",
             ]
         )
         current_reactions = message.reactions
 
         current_over_reactions = np.array(
-            list(
-                map(
-                    lambda y: cast(Emoji, y.emoji).name,
-                    filter(
-                        lambda x: (
-                            isinstance(x.emoji, Emoji) and x.emoji.name in over_emotes
-                        ),
-                        current_reactions,
+            [
+                cast(Emoji, y.emoji).name
+                for y in filter(
+                    lambda x: (
+                        isinstance(x.emoji, Emoji) and x.emoji.name in over_emotes
                     ),
+                    current_reactions,
                 )
-            )
+            ]
         )
         remaining_over_reactions = over_emotes[
             np.isin(over_emotes, current_over_reactions, invert=True)
@@ -447,7 +445,7 @@ async def bday(ctx: discord.Interaction, text: str):
                 font = ImageFont.truetype(font_path, font_size)
             else:
                 font = ImageFont.load_default()
-        except IOError:
+        except OSError:
             print(f"Warning: Could not load font from {font_path}. Using default font.")
             font = ImageFont.load_default()
 
