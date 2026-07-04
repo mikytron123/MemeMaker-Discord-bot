@@ -2,7 +2,6 @@ import tempfile
 import traceback
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
 
 import discord
 from apnggif import apnggif
@@ -27,7 +26,7 @@ class GifCommands(commands.Cog):
     async def apng2gif(
         self,
         ctx: discord.Interaction,
-        file: Optional[discord.Attachment] = None,
+        file: discord.Attachment | None = None,
         link: str = "",
     ):
         await ctx.response.defer()
@@ -64,7 +63,7 @@ class GifCommands(commands.Cog):
     async def giframe(
         self,
         ctx: discord.Interaction,
-        file: Optional[discord.Attachment] = None,
+        file: discord.Attachment | None = None,
         link: str = "",
     ):
         await ctx.response.defer()
@@ -99,7 +98,7 @@ class GifCommands(commands.Cog):
     async def reversegif(
         self,
         ctx: discord.Interaction,
-        file: Optional[discord.Attachment] = None,
+        file: discord.Attachment | None = None,
         link: str = "",
     ):
         await ctx.response.defer()

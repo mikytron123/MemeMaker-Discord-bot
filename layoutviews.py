@@ -1,6 +1,7 @@
 import traceback
 from io import BytesIO
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 import discord
 

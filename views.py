@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 import discord
 
@@ -9,7 +10,7 @@ class Scroller(discord.ui.View):
     def __init__(
         self,
         responselst: list[str],
-        embedfunc: Optional[Callable[[Any, int], discord.Embed]] = None,
+        embedfunc: Callable[[Any, int], discord.Embed] | None = None,
     ) -> None:
         super().__init__(timeout=20)
         self.count = 0

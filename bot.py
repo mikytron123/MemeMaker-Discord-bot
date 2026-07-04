@@ -5,7 +5,7 @@ import tempfile
 import traceback
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import cast
 
 import discord
 import httpx
@@ -34,7 +34,7 @@ args = parse_cli_args()
 
 configs = read_configs(prod=args.prod)
 TOKEN: str = configs.token
-MY_GUILDS: List[discord.Object] = configs.guilds
+MY_GUILDS: list[discord.Object] = configs.guilds
 
 
 class DiscordClient(commands.Bot):
@@ -239,7 +239,7 @@ async def sotrue(ctx: discord.Interaction, file: discord.Attachment):
 @timer_function
 async def amogus(
     ctx: discord.Interaction,
-    file: Optional[discord.Attachment] = None,
+    file: discord.Attachment | None = None,
     link: str = "",
     lines: discord.app_commands.Range[int, 10, 30] = 20,
 ):
@@ -285,7 +285,7 @@ async def amogus(
 async def creatememe(
     ctx: discord.Interaction,
     text: str,
-    file: Optional[discord.Attachment] = None,
+    file: discord.Attachment | None = None,
     link: str = "",
 ):
     await ctx.response.defer()
@@ -508,14 +508,14 @@ async def grid(
     ctx: discord.Interaction,
     title: str,
     image1: discord.Attachment,
-    image2: Optional[discord.Attachment] = None,
-    image3: Optional[discord.Attachment] = None,
-    image4: Optional[discord.Attachment] = None,
-    image5: Optional[discord.Attachment] = None,
-    image6: Optional[discord.Attachment] = None,
-    image7: Optional[discord.Attachment] = None,
-    image8: Optional[discord.Attachment] = None,
-    image9: Optional[discord.Attachment] = None,
+    image2: discord.Attachment | None = None,
+    image3: discord.Attachment | None = None,
+    image4: discord.Attachment | None = None,
+    image5: discord.Attachment | None = None,
+    image6: discord.Attachment | None = None,
+    image7: discord.Attachment | None = None,
+    image8: discord.Attachment | None = None,
+    image9: discord.Attachment | None = None,
 ):
     await ctx.response.defer()
     try:

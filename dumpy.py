@@ -1,6 +1,5 @@
 import colorsys
 import io
-from typing import Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -112,7 +111,7 @@ def dumpy(imagebytes: bytes, ty: int) -> list[Image.Image]:
     return frames
 
 
-def shader(t: Image.Image, pRgb: Tuple[int, int, int]):
+def shader(t: Image.Image, pRgb: tuple[int, int, int]):
     c = (197, 17, 17)
     c2 = (122, 8, 56)
     entry = tuple(map(float, pRgb))
@@ -165,7 +164,7 @@ def shader(t: Image.Image, pRgb: Tuple[int, int, int]):
 
 def overlayImages(
     bgImage: Image.Image, fgImage: Image.Image, locateX: int, locateY: int
-) -> Optional[Image.Image]:
+) -> Image.Image | None:
     if fgImage.height > bgImage.height or fgImage.width > fgImage.width:
         print(
             "Foreground Image Is Bigger In One or Both Dimensions"

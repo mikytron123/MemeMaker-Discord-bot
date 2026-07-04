@@ -2,7 +2,6 @@ import os
 from abc import ABC
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
 
 import discord
@@ -119,7 +118,7 @@ class UrlImage(DiscordImage):
 
 
 async def create_image_class(
-    file: Optional[discord.Attachment], link: str, filetype: str
+    file: discord.Attachment | None, link: str, filetype: str
 ) -> DiscordImage:
     """Constructs a DiscordImage class based on file or link input."""
 
