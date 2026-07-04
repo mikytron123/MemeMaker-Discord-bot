@@ -1,6 +1,6 @@
 pillow
 attrs
-httpx
+httpx2
 msgspec
 discord.py
 numpy<2

@@ -6,7 +6,7 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import discord
-import httpx
+import httpx2
 import msgspec
 from attrs import define, field
 
@@ -68,7 +68,7 @@ class DiscordImage(ABC):
     filename: str = field(init=False)
 
     async def get_image_bytes(self) -> bytes:
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             response = await client.get(self.url)
 
         imgbytes = response.content
@@ -103,7 +103,7 @@ class UrlImage(DiscordImage):
 
     @link.validator
     def _check_link(self, attribute, value: str):
-        response = httpx.head(value)
+        response = httpx2.head(value)
 
         if response.status_code < 200 or response.status_code > 300:
             raise ValueError("Invalid url, returned non 200 status code")
@@ -154,7 +154,7 @@ async def giphysearch(url: str) -> str:
     gif_id = url.split("-")[-1]
     params = {"api_key": api_key}
 
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         r = await client.get(f"https://api.giphy.com/v1/gifs/{gif_id}", params=params)
 
     if r.status_code == 200:
