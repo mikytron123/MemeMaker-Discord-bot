@@ -1,7 +1,7 @@
 import traceback
-from io import BytesIO
-from typing import Any
 from collections.abc import Callable
+from io import BytesIO
+from typing import Any, override
 
 import discord
 
@@ -9,14 +9,14 @@ from utils import memerequest, seekrandomframe
 
 
 class ScrollerButton(discord.ui.ActionRow):
-    def __init__(self, view):
+    def __init__(self, view)->None:
         super().__init__()
         self.__view = view
 
     @discord.ui.button(style=discord.ButtonStyle.primary, emoji="⬅️")
     async def left(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Scroll left in the response list."""
-        self.__view.count = max(0, self.__view.count - 1)
+        self.__view.count:int = max(0, self.__view.count - 1)
 
         embed = self.__view.containerfunc(self.__view.responselst, self.__view.count)
 
@@ -27,8 +27,8 @@ class ScrollerButton(discord.ui.ActionRow):
     @discord.ui.button(style=discord.ButtonStyle.primary, emoji="➡️")
     async def right(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Scroll right in the response list."""
-        new_count = min((self.__view.total_count) - 1, self.__view.count + 1)
-        self.__view.count = new_count
+        new_count:int = min((self.__view.total_count) - 1, self.__view.count + 1)
+        self.__view.count:int = new_count
 
         embed = self.__view.containerfunc(self.__view.responselst, self.__view.count)
 
@@ -36,7 +36,7 @@ class ScrollerButton(discord.ui.ActionRow):
 
         await interaction.response.edit_message(view=self.__view)
 
-    def update(self, embed):
+    def update(self, embed)->None:
         """updates view to match new container"""
         for ii in range(len(embed.children)):
             cont_child = self.__view.container.children[ii]
@@ -55,9 +55,9 @@ class ScrollerV2(discord.ui.LayoutView):
         containerfunc: Callable[[Any, int], Any],
     ) -> None:
         super().__init__(timeout=25)
-        self.count = 0
-        self.responselst = responselst
-        self.total_count = len(responselst)
+        self.count:int = 0
+        self.responselst:list[str] = responselst
+        self.total_count:int = len(responselst)
         self.containerfunc = containerfunc
         self.message = None
         container = self.containerfunc(self.responselst, 0)
@@ -67,6 +67,7 @@ class ScrollerV2(discord.ui.LayoutView):
         self.container = container
         self.add_item(container)
 
+    @override
     async def on_timeout(self) -> None:
         for child in self.walk_children():
             child.disabled = True  # type: ignore
@@ -75,17 +76,17 @@ class ScrollerV2(discord.ui.LayoutView):
 
 
 class Form(discord.ui.Modal, title="Form"):
-    def __init__(self, url: str, filename) -> None:
+    def __init__(self, url: str, filename:str) -> None:
         super().__init__()
-        self.background = url
-        self.filename = filename
+        self.background:str = url
+        self.filename:str = filename
 
     text: discord.ui.TextInput = discord.ui.TextInput(
         label="caption",
         placeholder="Enter image caption ...",
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: discord.Interaction)->None:
         """Handles the submission of the form to generate a meme."""
         imagebytes = await memerequest(self.background, self.text.value)
         await interaction.response.send_message(
@@ -104,7 +105,7 @@ class Form(discord.ui.Modal, title="Form"):
 
 
 class EditViewButton(discord.ui.ActionRow):
-    def __init__(self, view):
+    def __init__(self, view)->None:
         super().__init__()
         self.__view = view
 
@@ -118,8 +119,8 @@ class EditViewButton(discord.ui.ActionRow):
 class EditView(discord.ui.LayoutView):
     def __init__(self, url: str, filename: str, imagebytes: bytes) -> None:
         super().__init__(timeout=60)
-        self.background = url
-        self.filename = filename
+        self.background:str = url
+        self.filename:str = filename
         self.message = None
 
         container = discord.ui.Container(
@@ -130,6 +131,7 @@ class EditView(discord.ui.LayoutView):
         )
         self.add_item(container)
 
+    @override
     async def on_timeout(self) -> None:
         for child in self.walk_children():
             child.disabled = True  # type: ignore
@@ -138,7 +140,7 @@ class EditView(discord.ui.LayoutView):
 
 
 class RerollButton(discord.ui.ActionRow):
-    def __init__(self, view):
+    def __init__(self, view)->None:
         super().__init__()
         self.__view = view
 
@@ -155,8 +157,8 @@ class RerollButton(discord.ui.ActionRow):
 class RerollView(discord.ui.LayoutView):
     def __init__(self, imgbytes: bytes, filename: str, image_binary: BytesIO) -> None:
         super().__init__(timeout=60)
-        self.imgbytes = imgbytes
-        self.filename = filename
+        self.imgbytes:bytes = imgbytes
+        self.filename:str = filename
         self.message = None
 
         container = discord.ui.Container()
@@ -168,6 +170,7 @@ class RerollView(discord.ui.LayoutView):
         container.add_item(self.buttons)
         self.add_item(container)
 
+    @override
     async def on_timeout(self) -> None:
         for child in self.walk_children():
             child.disabled = True  # type: ignore

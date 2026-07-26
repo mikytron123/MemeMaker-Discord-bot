@@ -113,8 +113,8 @@ class UrlImage(DiscordImage):
             raise ValueError(f"link must redirect to a {self.filetype}")
 
     def __attrs_post_init__(self):
-        self.url = self.link
-        self.filename = str(Path(urlparse(self.link).path.split("/")[-1]))
+        self.url:str = self.link
+        self.filename:str = str(Path(urlparse(self.link).path.split("/")[-1]))
 
 
 async def create_image_class(

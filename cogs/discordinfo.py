@@ -6,8 +6,8 @@ from decorators import log_arguments, timer_function
 
 
 class DiscordInfo(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot:commands.Bot):
+        self.bot:commands.Bot = bot
 
     @app_commands.command(name="info", description="Extra info about the bot")
     @log_arguments

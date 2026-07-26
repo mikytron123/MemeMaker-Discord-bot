@@ -20,7 +20,7 @@ async def memerequest(background: str, text: str) -> bytes:
     payload_text = [x.strip() for x in text.split(",")]
     payload = {"background": background, "text": payload_text}
 
-    async with httpx2.AsyncClient() as client:
+    async with httpx2.AsyncClient(timeout=30) as client:
         req = await client.post(url=baseurl, data=payload)
         response = req.json()
         meme_url = response["url"]
