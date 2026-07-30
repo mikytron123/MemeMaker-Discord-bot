@@ -22,7 +22,7 @@ def read_configs(prod: bool) -> Configuration:
         configfile = "config.ini"
     conf.read(configfile)
     TOKEN = conf["DISCORD"]["token"]
-    guild_list: list[int] = cast(list[int],ast.literal_eval(conf["DISCORD"]["guilds"]))
+    guild_list: list[int] = cast(list[int], ast.literal_eval(conf["DISCORD"]["guilds"]))
     MY_GUILDS = [discord.Object(id=guild) for guild in guild_list]
     return Configuration(token=TOKEN, guilds=MY_GUILDS)
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import cast
 
 import discord
-import httpx
+import httpx2
 import matplotlib.pyplot as plt
 import nest_asyncio
 import numpy as np
@@ -50,7 +50,7 @@ class DiscordClient(commands.Bot):
 
 
 client = DiscordClient()
-httpClient = httpx.Client(timeout=120)
+httpClient = httpx2.Client(timeout=120)
 
 
 @client.event
@@ -552,7 +552,7 @@ async def grid(
         draw.text((5, 5), title, font=font, fill=(0, 0, 0))
 
         for ii, img in enumerate(imagelst_filtered):
-            grid_img = Image.open(BytesIO(httpx.get(img.url).content))
+            grid_img = Image.open(BytesIO(httpx2.get(img.url).content))
             grid_img = grid_img.resize((img_width, img_height))
             num = str(ii + 1)
             corner = (ii % cols) * img_width, (ii // cols) * img_height + 50

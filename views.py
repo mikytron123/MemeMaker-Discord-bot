@@ -13,8 +13,8 @@ class Scroller(discord.ui.View):
         embedfunc: Callable[[Any, int], discord.Embed] | None = None,
     ) -> None:
         super().__init__(timeout=20)
-        self.count:int = 0
-        self.responselst:list[str] = responselst
+        self.count: int = 0
+        self.responselst: list[str] = responselst
         self.embedfunc = embedfunc
 
     @discord.ui.button(style=discord.ButtonStyle.gray, emoji="⬅️")

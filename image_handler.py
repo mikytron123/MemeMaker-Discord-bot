@@ -60,6 +60,66 @@ class GiphyAPIResponse(msgspec.Struct):
     meta: Meta
 
 
+class Gif(msgspec.Struct):
+    url: str
+    width: int
+    height: int
+    size: int
+
+
+class Hd(msgspec.Struct):
+    gif: Gif
+
+
+class Md(msgspec.Struct):
+    gif: Gif
+
+
+class Sm(msgspec.Struct):
+    gif: Gif
+
+
+class Xs(msgspec.Struct):
+    gif: Gif
+
+
+class File(msgspec.Struct):
+    hd: Hd
+    md: Md
+    sm: Sm
+    xs: Xs
+
+
+class GifItem(msgspec.Struct):
+    """A single gif result."""
+
+    id: int
+    slug: str
+    title: str
+    file: File
+    tags: list[str]
+    type: str
+    blur_preview: str
+
+
+class MetaPayload(msgspec.Struct):
+    item_min_width: int
+    ad_max_resize_percent: int
+
+
+class DataPayload(msgspec.Struct):
+    data: list[GifItem]
+    current_page: int
+    per_page: int
+    has_next: bool
+    meta: MetaPayload
+
+
+class KlipyApiResponse(msgspec.Struct):
+    result: bool
+    data: DataPayload
+
+
 @define
 class DiscordImage(ABC):
     filetype: str
@@ -113,8 +173,8 @@ class UrlImage(DiscordImage):
             raise ValueError(f"link must redirect to a {self.filetype}")
 
     def __attrs_post_init__(self):
-        self.url:str = self.link
-        self.filename:str = str(Path(urlparse(self.link).path.split("/")[-1]))
+        self.url: str = self.link
+        self.filename: str = str(Path(urlparse(self.link).path.split("/")[-1]))
 
 
 async def create_image_class(
@@ -129,8 +189,11 @@ async def create_image_class(
     if file is not None:
         return FileImage(file=file, filetype=filetype)
     else:
+        # handle klipy links
+        if "klipy.com/gifs" in link:
+            link = await klipysearch(link)
         # handle giphy links
-        if "giphy.com/gifs" in link:
+        elif "giphy.com/gifs" in link:
             link = await giphysearch(link)
         # handle tenor links
         elif "media1.tenor.com" in link:
@@ -140,6 +203,45 @@ async def create_image_class(
             raise ValueError("link must redirect to a gif")
 
         return UrlImage(link=link, filetype=filetype)
+
+
+async def klipysearch(url: str) -> str:
+    """Searches for a gif using klipy api"""
+    api_key = os.getenv("KLIPY_API_KEY")
+
+    if api_key is None:
+        print("KLIPY_API_KEY is not set")
+        raise ValueError("KLIPY api key is missing")
+    gif_slug = url.split("/")[-1]
+    customer_id = "memebot"
+    url = f"https://api.klipy.com/api/v1/{api_key}/gifs/search"
+
+    params = {
+        "page": 1,
+        "per_page": 24,
+        "q": gif_slug,
+        "customer_id": customer_id,
+        "format_filter": "gif",
+    }
+    headers = {"Content-Type": "application/json"}
+
+    response = httpx2.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        decoder = msgspec.json.Decoder(type=KlipyApiResponse)
+        # load the GIFs using the urls for the medium GIF sizes
+        response = decoder.decode(response.content)
+        klipy_url = ""
+        for gifitem in response.data.data:
+            if gifitem.slug.casefold().startswith(gif_slug.casefold()):
+                klipy_url = gifitem.file.md.gif.url
+
+        if klipy_url != "":
+            return klipy_url
+        else:
+            raise ValueError("Klipy gif not found")
+
+    else:
+        raise ValueError("Non 200 status code for klipy api")
 
 
 async def giphysearch(url: str) -> str:

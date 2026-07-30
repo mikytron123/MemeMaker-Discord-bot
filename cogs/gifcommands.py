@@ -35,9 +35,10 @@ class GifCommands(commands.Cog):
             filename = str(Path(img.get_filename()).with_suffix(".gif"))
             imagebytes = await img.get_image_bytes()
 
-            with tempfile.NamedTemporaryFile(
-                suffix=".png", delete_on_close=False
-            ) as fp, tempfile.NamedTemporaryFile(suffix=".gif") as fp2:
+            with (
+                tempfile.NamedTemporaryFile(suffix=".png", delete_on_close=False) as fp,
+                tempfile.NamedTemporaryFile(suffix=".gif") as fp2,
+            ):
                 fp.write(imagebytes)
                 fp.close()
                 # convert to gif
@@ -135,6 +136,7 @@ class GifCommands(commands.Cog):
                 )
         except ValueError as v:
             print(v)
+            print(traceback.format_exc())
             await ctx.followup.send(str(v), ephemeral=True)
             return
 
